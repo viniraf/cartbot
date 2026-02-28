@@ -83,3 +83,75 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             )
         except Exception as send_error:
             logger.error(f"Failed to send error message to user {update.effective_user.id}: {send_error}")
+
+
+async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /add_item command - add item to active purchase.
+
+    Parses input: /add_item [name] [quantity] [unit_price]
+    Requires purchase_id in context (from /start).
+    """
+    try:
+        user_id = update.effective_user.id
+        logger.info(f"[User {user_id}] /add_item command received")
+
+        # Check for active purchase
+        purchase_id = context.user_data.get("purchase_id")
+        if purchase_id is None:
+            await update.message.reply_text(
+                "No active purchase. Use /start to begin."
+            )
+            return
+
+        # Parse arguments: /add_item name quantity unit_price
+        text = (update.message.text or "").strip()
+        args = text.split()[1:]  # Skip command
+
+        if len(args) < 3:
+            await update.message.reply_text(
+                "Usage: /add_item [name] [quantity] [unit_price]\n"
+                "Example: /add_item milk 2 1.50"
+            )
+            return
+
+        # Parse quantity and unit_price (last two args); name is the rest
+        try:
+            quantity = int(args[-2])
+            unit_price = float(args[-1])
+            name = " ".join(args[:-2])
+        except (ValueError, IndexError):
+            await update.message.reply_text(
+                "Invalid input. Quantity must be a whole number, price a number.\n"
+                "Example: /add_item milk 2 1.50"
+            )
+            return
+
+        if not name:
+            await update.message.reply_text(
+                "Item name cannot be empty.\n"
+                "Example: /add_item milk 2 1.50"
+            )
+            return
+
+        # Call service
+        service = context.bot_data["service"]
+        total = service.add_item(purchase_id, name, quantity, unit_price)
+
+        logger.info(f"[User {user_id}] Item '{name}' x{quantity} added to purchase {purchase_id}")
+
+        await update.message.reply_text(
+            f"Item added. Total: ${total:.2f}"
+        )
+
+    except NotFoundError as e:
+        logger.warning(f"[User {update.effective_user.id}] /add_item NotFoundError: {e}")
+        await update.message.reply_text(f"Error: {e}")
+    except ValidationError as e:
+        logger.warning(f"[User {update.effective_user.id}] /add_item ValidationError: {e}")
+        await update.message.reply_text(f"Error: {e}")
+    except Exception as e:
+        logger.error(f"[User {update.effective_user.id}] /add_item handler error: {type(e).__name__}: {e}")
+        try:
+            await update.message.reply_text("An error occurred. Please try again later.")
+        except Exception:
+            pass
