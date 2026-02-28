@@ -2,6 +2,7 @@
 
 import logging
 from app.infra import Config, setup_logging, init_db
+from app.handlers.telegram_bot import create_app, setup_handlers, run_bot
 
 # Initialize logging first
 setup_logging()
@@ -18,5 +19,10 @@ if __name__ == "__main__":
     logger.info("CartBot starting...")
     logger.info(f"Database: {Config.DATABASE_PATH}")
     logger.info(f"Log Level: {Config.LOG_LEVEL}")
-    logger.info("Ready to accept connections")
+
+    # Initialize and start Telegram bot
+    app = create_app()
+    setup_handlers(app)
+    logger.info("Starting bot polling...")
+    run_bot(app)
 
