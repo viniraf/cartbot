@@ -5,5 +5,6 @@ to the services layer.
 """
 
 from .telegram_bot import create_app, setup_handlers, run_bot
+from .handlers import start_handler
 
-__all__ = ["create_app", "setup_handlers", "run_bot"]
+__all__ = ["create_app", "setup_handlers", "run_bot", "start_handler"]
