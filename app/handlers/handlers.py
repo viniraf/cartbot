@@ -14,6 +14,7 @@ Each handler follows the pattern:
         # Reply to user
 """
 
+import functools
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -23,7 +24,44 @@ from app.domain import NotFoundError, ValidationError
 
 logger = logging.getLogger(__name__)
 
+# User-facing messages (Phase 7.3 - UX consistency)
+MSG_NO_ACTIVE_PURCHASE = "No active purchase. Use /start to begin."
+MSG_ERROR_GENERIC = "An error occurred. Please try again later."
+MSG_ADD_ITEM_USAGE = "Usage: /add_item [name] [quantity] [unit_price]\nExample: /add_item milk 2 1.50"
+MSG_DELETE_ITEM_USAGE = "Usage: /delete_item [index]\nExample: /delete_item 1"
+MSG_EDIT_ITEM_USAGE = "Usage: /edit_item [index] [new_quantity] [new_price]\nExample: /edit_item 1 3 2.00"
 
+
+def safe_handler(func):
+    """Decorator that catches unhandled exceptions and sends user-friendly message.
+
+    Logs exception at ERROR level with traceback. Sends generic error message to user.
+    Handlers should catch NotFoundError and ValidationError for specific messages.
+    """
+
+    @functools.wraps(func)
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        try:
+            return await func(update, context)
+        except (NotFoundError, ValidationError):
+            raise  # Let handler provide specific message
+        except Exception as e:
+            logger.exception(
+                "Unhandled exception in %s: %s: %s",
+                func.__name__,
+                type(e).__name__,
+                e,
+            )
+            try:
+                if update and update.message:
+                    await update.message.reply_text(MSG_ERROR_GENERIC)
+            except Exception as send_err:
+                logger.error("Failed to send error message to user: %s", send_err)
+
+    return wrapper
+
+
+@safe_handler
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /start command - initialize new shopping list.
 
@@ -46,45 +84,26 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         - Service errors → "An error occurred. Please try again."
         - Full error logged for debugging
     """
-    try:
-        # Extract user information
-        user_id = update.effective_user.id
-        username = update.effective_user.username or "Unknown"
+    user_id = update.effective_user.id
+    username = update.effective_user.username or "Unknown"
 
-        logger.info(f"[User {user_id}] /start command received (username: {username})")
+    logger.info("[User %s] /start command received (username: %s)", user_id, username)
 
-        # Get service from bot context (injected during create_app)
-        service = context.bot_data["service"]
+    service = context.bot_data["service"]
+    purchase_id = service.start_purchase()
 
-        # Create new purchase via stateless service
-        purchase_id = service.start_purchase()
+    context.user_data["purchase_id"] = purchase_id
 
-        # Store purchase_id in user context for subsequent commands
-        # context.user_data is per-user storage (separate for each Telegram user)
-        context.user_data["purchase_id"] = purchase_id
+    logger.info("[User %s] Purchase started with ID %s", user_id, purchase_id)
 
-        logger.info(f"[User {user_id}] Purchase started with ID {purchase_id}")
-
-        # Send welcome message to user
-        await update.message.reply_text(
-            f"🛒 Shopping list started!\n"
-            f"Use /add_item to add items.\n"
-            f"Example: /add_item Milk 2 1.50"
-        )
-
-    except Exception as e:
-        # Log full error for debugging
-        logger.error(f"[User {update.effective_user.id}] /start handler error: {type(e).__name__}: {str(e)}")
-
-        # Send user-friendly error message (no traceback exposed)
-        try:
-            await update.message.reply_text(
-                "❌ An error occurred. Please try again later."
-            )
-        except Exception as send_error:
-            logger.error(f"Failed to send error message to user {update.effective_user.id}: {send_error}")
+    await update.message.reply_text(
+        "🛒 Shopping list started!\n"
+        "Use /add_item to add items. Example: /add_item Milk 2 1.50\n"
+        "Use /list_items to see all items."
+    )
 
 
+@safe_handler
 async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /add_item command - add item to active purchase.
 
@@ -98,39 +117,30 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         # Check for active purchase
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(
-                "No active purchase. Use /start to begin."
-            )
+            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
             return
 
-        # Parse arguments: /add_item name quantity unit_price
         text = (update.message.text or "").strip()
-        args = text.split()[1:]  # Skip command
+        args = text.split()[1:]
 
         if len(args) < 3:
-            await update.message.reply_text(
-                "Usage: /add_item [name] [quantity] [unit_price]\n"
-                "Example: /add_item milk 2 1.50"
-            )
+            logger.warning("[User %s] /add_item invalid args: %s", user_id, args)
+            await update.message.reply_text(MSG_ADD_ITEM_USAGE)
             return
 
-        # Parse quantity and unit_price (last two args); name is the rest
         try:
             quantity = int(args[-2])
             unit_price = float(args[-1])
             name = " ".join(args[:-2])
         except (ValueError, IndexError):
+            logger.warning("[User %s] /add_item invalid input: %s", user_id, args)
             await update.message.reply_text(
-                "Invalid input. Quantity must be a whole number, price a number.\n"
-                "Example: /add_item milk 2 1.50"
+                "Invalid input. Quantity must be a whole number, price a number.\n" + MSG_ADD_ITEM_USAGE
             )
             return
 
         if not name:
-            await update.message.reply_text(
-                "Item name cannot be empty.\n"
-                "Example: /add_item milk 2 1.50"
-            )
+            await update.message.reply_text("Item name cannot be empty.\n" + MSG_ADD_ITEM_USAGE)
             return
 
         # Call service
@@ -140,23 +150,18 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         logger.info(f"[User {user_id}] Item '{name}' x{quantity} added to purchase {purchase_id}")
 
         await update.message.reply_text(
-            f"Item added. Total: ${total:.2f}"
+            f"Item added. Total: ${total:.2f}\nUse /list_items to see all items."
         )
 
     except NotFoundError as e:
-        logger.warning(f"[User {update.effective_user.id}] /add_item NotFoundError: {e}")
+        logger.warning("[User %s] /add_item NotFoundError: %s", update.effective_user.id, e)
         await update.message.reply_text(f"Error: {e}")
     except ValidationError as e:
-        logger.warning(f"[User {update.effective_user.id}] /add_item ValidationError: {e}")
+        logger.warning("[User %s] /add_item ValidationError: %s", update.effective_user.id, e)
         await update.message.reply_text(f"Error: {e}")
-    except Exception as e:
-        logger.error(f"[User {update.effective_user.id}] /add_item handler error: {type(e).__name__}: {e}")
-        try:
-            await update.message.reply_text("An error occurred. Please try again later.")
-        except Exception:
-            pass
 
 
+@safe_handler
 async def view_total_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /view_total command - show current total and item count."""
     try:
@@ -165,9 +170,7 @@ async def view_total_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(
-                "No active purchase. Use /start to begin."
-            )
+            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
             return
 
         service = context.bot_data["service"]
@@ -177,20 +180,15 @@ async def view_total_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         count = purchase["item_count"]
 
         await update.message.reply_text(
-            f"Total: ${total:.2f} | Items: {count}"
+            f"Total: ${total:.2f} | Items: {count}\nUse /list_items to see item details."
         )
 
     except NotFoundError as e:
-        logger.warning(f"[User {update.effective_user.id}] /view_total NotFoundError: {e}")
-        await update.message.reply_text("No active purchase. Use /start to begin.")
-    except Exception as e:
-        logger.error(f"[User {update.effective_user.id}] /view_total handler error: {type(e).__name__}: {e}")
-        try:
-            await update.message.reply_text("An error occurred. Please try again later.")
-        except Exception:
-            pass
+        logger.warning("[User %s] /view_total NotFoundError: %s", update.effective_user.id, e)
+        await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
 
 
+@safe_handler
 async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /list_items command - show all items in current purchase."""
     try:
@@ -199,9 +197,7 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(
-                "No active purchase. Use /start to begin."
-            )
+            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
             return
 
         service = context.bot_data["service"]
@@ -209,7 +205,9 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         items = purchase.get("items", [])
         if not items:
-            await update.message.reply_text("No items yet.")
+            await update.message.reply_text(
+                "No items yet. Use /add_item to add items."
+            )
             return
 
         lines = []
@@ -220,18 +218,16 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             subtotal = qty * price
             lines.append(f"{i}. {name} × {qty} @ ${price:.2f} = ${subtotal:.2f}")
 
+        lines.append("")
+        lines.append("Use /delete_item N to remove, /edit_item N qty price to edit.")
         await update.message.reply_text("\n".join(lines))
 
-    except NotFoundError:
-        await update.message.reply_text("No active purchase. Use /start to begin.")
-    except Exception as e:
-        logger.error(f"[User {update.effective_user.id}] /list_items handler error: {type(e).__name__}: {e}")
-        try:
-            await update.message.reply_text("An error occurred. Please try again later.")
-        except Exception:
-            pass
+    except NotFoundError as e:
+        logger.warning("[User %s] /list_items NotFoundError: %s", update.effective_user.id, e)
+        await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
 
 
+@safe_handler
 async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /delete_item command - remove item by index (1-based)."""
     try:
@@ -240,29 +236,26 @@ async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(
-                "No active purchase. Use /start to begin."
-            )
+            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
             return
 
         text = (update.message.text or "").strip()
         args = text.split()[1:]
 
         if len(args) < 1:
-            await update.message.reply_text(
-                "Usage: /delete_item [index]\n"
-                "Example: /delete_item 1"
-            )
+            logger.warning("[User %s] /delete_item missing args", user_id)
+            await update.message.reply_text(MSG_DELETE_ITEM_USAGE)
             return
 
         try:
             user_index = int(args[0])
         except ValueError:
-            await update.message.reply_text("Invalid index. Use a number (e.g. /delete_item 1).")
+            logger.warning("[User %s] /delete_item invalid index: %s", user_id, args)
+            await update.message.reply_text("Invalid index. Use a number.\n" + MSG_DELETE_ITEM_USAGE)
             return
 
         if user_index < 1:
-            await update.message.reply_text("Index must be 1 or greater.")
+            await update.message.reply_text("Index must be 1 or greater.\n" + MSG_DELETE_ITEM_USAGE)
             return
 
         # Convert 1-based (user) to 0-based (internal)
@@ -278,16 +271,11 @@ async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
 
     except NotFoundError as e:
-        logger.warning(f"[User {update.effective_user.id}] /delete_item NotFoundError: {e}")
+        logger.warning("[User %s] /delete_item NotFoundError: %s", update.effective_user.id, e)
         await update.message.reply_text(f"Error: {e}")
-    except Exception as e:
-        logger.error(f"[User {update.effective_user.id}] /delete_item handler error: {type(e).__name__}: {e}")
-        try:
-            await update.message.reply_text("An error occurred. Please try again later.")
-        except Exception:
-            pass
 
 
+@safe_handler
 async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /edit_item command - modify item quantity or price by index (1-based)."""
     try:
@@ -296,19 +284,15 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(
-                "No active purchase. Use /start to begin."
-            )
+            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
             return
 
         text = (update.message.text or "").strip()
         args = text.split()[1:]
 
         if len(args) < 3:
-            await update.message.reply_text(
-                "Usage: /edit_item [index] [new_quantity] [new_price]\n"
-                "Example: /edit_item 1 3 2.00"
-            )
+            logger.warning("[User %s] /edit_item invalid args: %s", user_id, args)
+            await update.message.reply_text(MSG_EDIT_ITEM_USAGE)
             return
 
         try:
@@ -316,14 +300,14 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             quantity = int(args[1])
             unit_price = float(args[2])
         except (ValueError, IndexError):
+            logger.warning("[User %s] /edit_item invalid input: %s", user_id, args)
             await update.message.reply_text(
-                "Invalid input. Index and quantity must be whole numbers, price a number.\n"
-                "Example: /edit_item 1 3 2.00"
+                "Invalid input. Index and quantity must be whole numbers, price a number.\n" + MSG_EDIT_ITEM_USAGE
             )
             return
 
         if user_index < 1:
-            await update.message.reply_text("Index must be 1 or greater.")
+            await update.message.reply_text("Index must be 1 or greater.\n" + MSG_EDIT_ITEM_USAGE)
             return
 
         item_index = user_index - 1
@@ -338,19 +322,14 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         )
 
     except NotFoundError as e:
-        logger.warning(f"[User {update.effective_user.id}] /edit_item NotFoundError: {e}")
+        logger.warning("[User %s] /edit_item NotFoundError: %s", update.effective_user.id, e)
         await update.message.reply_text(f"Error: {e}")
     except ValidationError as e:
-        logger.warning(f"[User {update.effective_user.id}] /edit_item ValidationError: {e}")
+        logger.warning("[User %s] /edit_item ValidationError: %s", update.effective_user.id, e)
         await update.message.reply_text(f"Error: {e}")
-    except Exception as e:
-        logger.error(f"[User {update.effective_user.id}] /edit_item handler error: {type(e).__name__}: {e}")
-        try:
-            await update.message.reply_text("An error occurred. Please try again later.")
-        except Exception:
-            pass
 
 
+@safe_handler
 async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /finish command - complete purchase and show final summary."""
     try:
@@ -359,9 +338,7 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(
-                "No active purchase. Use /start to begin."
-            )
+            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
             return
 
         service = context.bot_data["service"]
@@ -370,22 +347,16 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         total = result["total"]
         count = result["item_count"]
 
-        logger.info(f"[User {user_id}] Purchase {purchase_id} finished")
+        logger.info("[User %s] Purchase %s finished (total=%.2f, items=%s)", user_id, purchase_id, total, count)
 
         await update.message.reply_text(
             f"Purchase finished. Total: ${total:.2f} | Items: {count}\n"
-            f"Use /start to begin a new purchase"
+            "Use /start to begin a new purchase."
         )
 
         # Clear purchase_id so next /start creates fresh purchase
         context.user_data.pop("purchase_id", None)
 
     except NotFoundError as e:
-        logger.warning(f"[User {update.effective_user.id}] /finish NotFoundError: {e}")
-        await update.message.reply_text("No active purchase. Use /start to begin.")
-    except Exception as e:
-        logger.error(f"[User {update.effective_user.id}] /finish handler error: {type(e).__name__}: {e}")
-        try:
-            await update.message.reply_text("An error occurred. Please try again later.")
-        except Exception:
-            pass
+        logger.warning("[User %s] /finish NotFoundError: %s", update.effective_user.id, e)
+        await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)

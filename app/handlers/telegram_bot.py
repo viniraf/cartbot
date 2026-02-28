@@ -81,6 +81,19 @@ def setup_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("delete_item", delete_item_handler))
     app.add_handler(CommandHandler("finish", finish_handler))
 
+    # Global error handler for uncaught exceptions
+    async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        err = context.error
+        if err:
+            logger.exception("Uncaught exception in bot: %s", err)
+            try:
+                if update and hasattr(update, "message") and update.message:
+                    await update.message.reply_text("An error occurred. Please try again later.")
+            except Exception as send_err:
+                logger.error("Failed to send error message: %s", send_err)
+
+    app.add_error_handler(error_handler)
+
     logger.info(
         "Handler setup complete (7 handlers: /start, /add_item, /view_total, "
         "/list_items, /edit_item, /delete_item, /finish)"
