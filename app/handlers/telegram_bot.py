@@ -60,21 +60,29 @@ def setup_handlers(app: Application) -> None:
         app: The Application instance to configure.
     """
     from telegram.ext import CommandHandler
-    from app.handlers.handlers import start_handler, add_item_handler
+    from app.handlers.handlers import (
+        start_handler,
+        add_item_handler,
+        view_total_handler,
+        list_items_handler,
+        edit_item_handler,
+        delete_item_handler,
+    )
 
     logger.info("Setting up handlers...")
 
     # Command handlers in order of priority
     app.add_handler(CommandHandler("start", start_handler))
     app.add_handler(CommandHandler("add_item", add_item_handler))
+    app.add_handler(CommandHandler("view_total", view_total_handler))
+    app.add_handler(CommandHandler("list_items", list_items_handler))
+    app.add_handler(CommandHandler("edit_item", edit_item_handler))
+    app.add_handler(CommandHandler("delete_item", delete_item_handler))
 
-    # Phase 6+ will add:
-    # app.add_handler(CommandHandler("delete_item", delete_item_handler))
-    # app.add_handler(CommandHandler("list_items", list_items_handler))
-    # app.add_handler(CommandHandler("view_total", view_total_handler))
-    # app.add_handler(CommandHandler("finish", finish_handler))
-
-    logger.info("Handler setup complete (2 handlers registered: /start, /add_item)")
+    logger.info(
+        "Handler setup complete (6 handlers: /start, /add_item, /view_total, "
+        "/list_items, /edit_item, /delete_item)"
+    )
 
 
 def run_bot(app: Application) -> None:
