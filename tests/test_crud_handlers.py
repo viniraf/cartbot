@@ -14,6 +14,7 @@ from app.handlers.handlers import (
     list_items_handler,
     edit_item_handler,
     delete_item_handler,
+    finish_handler,
 )
 from app.services import PurchaseService
 from app.infra.repositories import SQLitePurchaseRepository
@@ -249,3 +250,65 @@ class TestEditItemHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "No active purchase" in message_text
+
+
+class TestFinishHandler:
+    """Test /finish handler."""
+
+    @pytest.mark.asyncio
+    async def test_finish_shows_summary_and_clears_state(self, mock_update, mock_context):
+        """finish_handler should show summary, clear purchase_id, and prompt for /start."""
+        await start_handler(mock_update, mock_context)
+        mock_update.message.text = "/add_item milk 2 1.50"
+        await add_item_handler(mock_update, mock_context)
+
+        mock_update.message.text = "/finish"
+        await finish_handler(mock_update, mock_context)
+
+        message_text = mock_update.message.reply_text.call_args[0][0]
+        assert "Purchase finished" in message_text
+        assert "Total" in message_text
+        assert "$3.00" in message_text
+        assert "Items" in message_text
+        assert "1" in message_text
+        assert "/start" in message_text
+
+        assert "purchase_id" not in mock_context.user_data
+
+    @pytest.mark.asyncio
+    async def test_finish_resets_for_new_purchase(self, mock_update, mock_context):
+        """After /finish, /start should create fresh purchase with new ID."""
+        await start_handler(mock_update, mock_context)
+        purchase_id_1 = mock_context.user_data["purchase_id"]
+        mock_update.message.text = "/finish"
+        await finish_handler(mock_update, mock_context)
+
+        await start_handler(mock_update, mock_context)
+        purchase_id_2 = mock_context.user_data["purchase_id"]
+
+        assert purchase_id_1 != purchase_id_2
+
+    @pytest.mark.asyncio
+    async def test_finish_empty_purchase(self, mock_update, mock_context):
+        """finish_handler should work with empty purchase (0 items, $0 total)."""
+        await start_handler(mock_update, mock_context)
+
+        mock_update.message.text = "/finish"
+        await finish_handler(mock_update, mock_context)
+
+        message_text = mock_update.message.reply_text.call_args[0][0]
+        assert "Purchase finished" in message_text
+        assert "$0.00" in message_text
+        assert "Items" in message_text
+        assert "0" in message_text
+        assert "purchase_id" not in mock_context.user_data
+
+    @pytest.mark.asyncio
+    async def test_finish_without_start(self, mock_update, mock_context):
+        """finish without /start should prompt to use /start."""
+        mock_update.message.text = "/finish"
+        await finish_handler(mock_update, mock_context)
+
+        message_text = mock_update.message.reply_text.call_args[0][0]
+        assert "No active purchase" in message_text
+        assert "/start" in message_text

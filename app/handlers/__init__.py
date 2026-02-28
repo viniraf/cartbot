@@ -12,6 +12,7 @@ from .handlers import (
     list_items_handler,
     edit_item_handler,
     delete_item_handler,
+    finish_handler,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "list_items_handler",
     "edit_item_handler",
     "delete_item_handler",
+    "finish_handler",
 ]

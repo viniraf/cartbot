@@ -349,3 +349,43 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             await update.message.reply_text("An error occurred. Please try again later.")
         except Exception:
             pass
+
+
+async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /finish command - complete purchase and show final summary."""
+    try:
+        user_id = update.effective_user.id
+        logger.info(f"[User {user_id}] /finish command received")
+
+        purchase_id = context.user_data.get("purchase_id")
+        if purchase_id is None:
+            await update.message.reply_text(
+                "No active purchase. Use /start to begin."
+            )
+            return
+
+        service = context.bot_data["service"]
+        result = service.finish_purchase(purchase_id)
+
+        total = result["total"]
+        count = result["item_count"]
+
+        logger.info(f"[User {user_id}] Purchase {purchase_id} finished")
+
+        await update.message.reply_text(
+            f"Purchase finished. Total: ${total:.2f} | Items: {count}\n"
+            f"Use /start to begin a new purchase"
+        )
+
+        # Clear purchase_id so next /start creates fresh purchase
+        context.user_data.pop("purchase_id", None)
+
+    except NotFoundError as e:
+        logger.warning(f"[User {update.effective_user.id}] /finish NotFoundError: {e}")
+        await update.message.reply_text("No active purchase. Use /start to begin.")
+    except Exception as e:
+        logger.error(f"[User {update.effective_user.id}] /finish handler error: {type(e).__name__}: {e}")
+        try:
+            await update.message.reply_text("An error occurred. Please try again later.")
+        except Exception:
+            pass
