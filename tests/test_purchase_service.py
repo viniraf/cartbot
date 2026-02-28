@@ -223,6 +223,75 @@ class TestPurchaseServiceRemoveItem:
         assert total == 0
 
 
+class TestPurchaseServiceEditItem:
+    """Test edit_item() method."""
+
+    def test_edit_item_quantity(self, service):
+        """Should update item quantity and return new total."""
+        purchase_id = service.start_purchase()
+        service.add_item(purchase_id, "Milk", 2, 1.50)
+
+        total = service.edit_item(purchase_id, 0, quantity=5)
+
+        assert total == 7.50  # 5 * 1.50
+        purchase = service.get_purchase(purchase_id)
+        assert purchase["items"][0]["quantity"] == 5
+
+    def test_edit_item_price(self, service):
+        """Should update item unit_price and return new total."""
+        purchase_id = service.start_purchase()
+        service.add_item(purchase_id, "Milk", 2, 1.50)
+
+        total = service.edit_item(purchase_id, 0, unit_price=2.00)
+
+        assert total == 4.00  # 2 * 2.00
+        purchase = service.get_purchase(purchase_id)
+        assert purchase["items"][0]["unit_price"] == 2.00
+
+    def test_edit_item_both_quantity_and_price(self, service):
+        """Should update both quantity and price."""
+        purchase_id = service.start_purchase()
+        service.add_item(purchase_id, "Milk", 2, 1.50)
+
+        total = service.edit_item(purchase_id, 0, quantity=3, unit_price=2.00)
+
+        assert total == 6.00
+        purchase = service.get_purchase(purchase_id)
+        assert purchase["items"][0]["quantity"] == 3
+        assert purchase["items"][0]["unit_price"] == 2.00
+
+    def test_edit_item_preserves_name(self, service):
+        """Should preserve item name when editing."""
+        purchase_id = service.start_purchase()
+        service.add_item(purchase_id, "Organic Milk", 1, 3.00)
+
+        service.edit_item(purchase_id, 0, quantity=2)
+
+        purchase = service.get_purchase(purchase_id)
+        assert purchase["items"][0]["name"] == "Organic Milk"
+
+    def test_edit_item_invalid_index(self, service):
+        """Should raise NotFoundError for invalid index."""
+        purchase_id = service.start_purchase()
+        service.add_item(purchase_id, "Milk", 1, 1.50)
+
+        with pytest.raises(NotFoundError):
+            service.edit_item(purchase_id, 999, quantity=2)
+
+    def test_edit_item_nonexistent_purchase(self, service):
+        """Should raise NotFoundError if purchase doesn't exist."""
+        with pytest.raises(NotFoundError, match="Purchase 999 not found"):
+            service.edit_item(999, 0, quantity=2)
+
+    def test_edit_item_requires_quantity_or_price(self, service):
+        """Should raise ValidationError if neither quantity nor price provided."""
+        purchase_id = service.start_purchase()
+        service.add_item(purchase_id, "Milk", 1, 1.50)
+
+        with pytest.raises(ValidationError, match="Must provide"):
+            service.edit_item(purchase_id, 0)
+
+
 class TestPurchaseServiceGetPurchase:
     """Test get_purchase() method."""
 

@@ -96,6 +96,56 @@ class PurchaseService:
         logger.info(f"Item '{name}' added to purchase {purchase_id}")
         return purchase_obj.total()
 
+    def edit_item(
+        self,
+        purchase_id: int,
+        item_index: int,
+        quantity: Optional[int] = None,
+        unit_price: Optional[float] = None,
+    ) -> float:
+        """Edit an item in a purchase (quantity and/or unit_price).
+
+        Args:
+            purchase_id: ID of purchase to modify.
+            item_index: Zero-based index of item to edit.
+            quantity: New quantity (optional).
+            unit_price: New unit price (optional).
+
+        Returns:
+            Updated total cost of the purchase.
+
+        Raises:
+            NotFoundError: If purchase or item index not found.
+            ValidationError: If quantity or unit_price invalid.
+        """
+        from app.domain import PurchaseItem
+
+        purchase = self.repository.get_by_id(purchase_id)
+        if purchase is None:
+            raise NotFoundError(f"Purchase {purchase_id} not found")
+
+        purchase_obj = self._dict_to_purchase(purchase)
+
+        if item_index < 0 or item_index >= len(purchase_obj.items):
+            raise NotFoundError(
+                f"Item index {item_index} not found (purchase has {len(purchase_obj.items)} items)"
+            )
+
+        if quantity is None and unit_price is None:
+            raise ValidationError("Must provide quantity or unit_price to edit")
+
+        item = purchase_obj.items[item_index]
+        new_qty = quantity if quantity is not None else item.quantity
+        new_price = unit_price if unit_price is not None else item.unit_price
+
+        new_item = PurchaseItem(name=item.name, quantity=new_qty, unit_price=new_price)
+        purchase_obj.items[item_index] = new_item
+
+        self.repository.save(self._purchase_to_dict(purchase_obj))
+
+        logger.info(f"Item {item_index} edited in purchase {purchase_id}")
+        return purchase_obj.total()
+
     def remove_item(self, purchase_id: int, item_index: int) -> float:
         """Remove an item from a purchase by index (0-based).
 
