@@ -68,6 +68,7 @@ def setup_handlers(app: Application) -> None:
         edit_item_handler,
         delete_item_handler,
         finish_handler,
+        help_handler,
     )
 
     logger.info("Setting up handlers...")
@@ -80,6 +81,7 @@ def setup_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("edit_item", edit_item_handler))
     app.add_handler(CommandHandler("delete_item", delete_item_handler))
     app.add_handler(CommandHandler("finish", finish_handler))
+    app.add_handler(CommandHandler("help", help_handler))
 
     # Global error handler for uncaught exceptions
     async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:

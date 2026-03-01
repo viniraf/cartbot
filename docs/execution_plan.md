@@ -862,7 +862,7 @@ Need help? Use /help
 ```
 ---
 
-### Step 8.2 — Global Help Command
+### Step 8.2 — Global Help Command ✅
 
 **Goal:** Make commands discoverable and self-documenting.
 
@@ -1307,7 +1307,7 @@ Precisa de ajuda? Use /help
 
 ## Phase 8: UX & Localization (V2)
 - [x] 8.1 — Message formatting layer
-- [ ] 8.2 — Global help command
+- [x] 8.2 — Global help command
 - [ ] 8.3 — Resume / new purchase flow
 - [ ] 8.4 — Pipe-based item parsing
 - [ ] 8.5 — UX message standardization

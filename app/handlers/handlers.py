@@ -357,3 +357,31 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     except NotFoundError as e:
         logger.warning("[User %s] /finish NotFoundError: %s", update.effective_user.id, e)
         await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
+
+
+@safe_handler
+async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /help command by displaying all available commands.
+
+    Message is sectioned into Session, Items, and Overview groups.  Uses
+    formatting helpers for consistency and appends the standard help hint.
+    """
+    # Build the help text with blank lines separating sections
+    lines = [
+        "Available Commands",
+        "",
+        "Session",
+        "/start — start or resume a purchase",
+        "/finish — finish current purchase",
+        "",
+        "Items",
+        "/add_item Name | qty | price",
+        "/edit_item index qty price",
+        "/delete_item index",
+        "",
+        "Overview",
+        "/view_total — show total",
+        "/list_items — show all items",
+    ]
+    text = format_command_block(lines)
+    await update.message.reply_text(append_help_hint(text))
