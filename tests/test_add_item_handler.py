@@ -108,6 +108,20 @@ class TestAddItemSuccess:
         assert items[0]["quantity"] == 1
         assert items[0]["unit_price"] == 2.50
 
+    @pytest.mark.asyncio
+    async def test_add_item_pipe_format(self, mock_update, mock_context):
+        """New pipe-separated syntax should be accepted."""
+        await start_handler(mock_update, mock_context)
+        mock_update.message.text = "/add_item Milk | 2 | 1.50"
+
+        await add_item_handler(mock_update, mock_context)
+
+        message_text = mock_update.message.reply_text.call_args[0][0]
+        assert "Item added" in message_text
+        assert "R$" in message_text
+        assert "3.00" in message_text
+
+
 
 class TestAddItemValidation:
     """Test input validation."""
@@ -135,6 +149,19 @@ class TestAddItemValidation:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Usage" in message_text or "Example" in message_text
+
+    @pytest.mark.asyncio
+    async def test_add_item_invalid_pipe_format(self, mock_update, mock_context):
+        """Malformed pipe syntax should prompt format error."""
+        await start_handler(mock_update, mock_context)
+        # missing one segment
+        mock_update.message.text = "/add_item Milk | 2"
+
+        await add_item_handler(mock_update, mock_context)
+
+        message_text = mock_update.message.reply_text.call_args[0][0]
+        assert "Invalid format" in message_text
+        assert "/add_item Name | qty | price" in message_text
 
     @pytest.mark.asyncio
     async def test_add_item_invalid_quantity_rejects(self, mock_update, mock_context):

@@ -987,7 +987,7 @@ Need help? Use /help
 
 ---
 
-### Step 8.4 — Pipe-Based Item Parsing
+### Step 8.4 — Pipe-Based Item Parsing ✅
 
 **Goal:** Fix parsing ambiguity and support numbers in names.
 
@@ -1007,7 +1007,8 @@ Need help? Use /help
        price = float(parts[2].strip())
        return name, qty, price
    ```
-2. Update `add_item_handler()` to use pipe parser
+2. Update `add_item_handler()` to use pipe parser, with a
+   backward-compatible fallback to original whitespace syntax.
 3. Validation rules:
    - Split by `|` (pipe character)
    - Trim whitespace from each part
@@ -1038,6 +1039,7 @@ Need help? Use /help
 **Stop condition:**
 - Pipe parsing works correctly
 - Numbers in item names supported
+- Backward compatibility preserved
 - All invalid inputs rejected with helpful message
 
 **Common mistakes to avoid:**
@@ -1309,7 +1311,7 @@ Precisa de ajuda? Use /help
 - [x] 8.1 — Message formatting layer
 - [x] 8.2 — Global help command
 - [ ] 8.3 — Resume / new purchase flow
-- [ ] 8.4 — Pipe-based item parsing
+- [x] 8.4 — Pipe-based item parsing
 - [ ] 8.5 — UX message standardization
 - [ ] 8.6 — Localization layer (EN + PT-BR)
 - [ ] 8.7 — Tests update for V2

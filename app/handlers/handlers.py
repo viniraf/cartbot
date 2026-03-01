@@ -21,6 +21,7 @@ from telegram.ext import ContextTypes
 
 from app.domain import NotFoundError, ValidationError
 from app.common.formatters import format_currency, append_help_hint, format_command_block
+from app.common.validators import parse_add_item_input
 
 
 logger = logging.getLogger(__name__)
@@ -123,27 +124,48 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             return
 
         text = (update.message.text or "").strip()
-        args = text.split()[1:]
+        # drop the command itself
+        body = text[len("/add_item") :].strip()
 
-        if len(args) < 3:
-            logger.warning("[User %s] /add_item invalid args: %s", user_id, args)
-            await update.message.reply_text(MSG_ADD_ITEM_USAGE)
-            return
+        # try new pipe-based syntax first
+        if "|" in body:
+            try:
+                name, quantity, unit_price = parse_add_item_input(body)
+            except ValueError as err:
+                logger.warning("[User %s] /add_item pipe parse error: %s", user_id, err)
+                msg = (
+                    "Invalid format.\n\n"
+                    "Use:\n" 
+                    "/add_item Name | qty | price\n\n"
+                    "Example:\n" 
+                    "/add_item Milk | 2 | 5.50"
+                )
+                await update.message.reply_text(append_help_hint(msg))
+                return
+        else:
+            # fallback to original whitespace-separated parser for backwards compatibility
+            args = body.split()
+            if len(args) < 3:
+                logger.warning("[User %s] /add_item invalid args: %s", user_id, args)
+                await update.message.reply_text(append_help_hint(MSG_ADD_ITEM_USAGE))
+                return
+            try:
+                quantity = int(args[-2])
+                unit_price = float(args[-1])
+                name = " ".join(args[:-2])
+            except (ValueError, IndexError):
+                logger.warning("[User %s] /add_item invalid input: %s", user_id, args)
+                await update.message.reply_text(
+                    append_help_hint(
+                        "Invalid input. Quantity must be a whole number, price a number.\n"
+                        + MSG_ADD_ITEM_USAGE
+                    )
+                )
+                return
 
-        try:
-            quantity = int(args[-2])
-            unit_price = float(args[-1])
-            name = " ".join(args[:-2])
-        except (ValueError, IndexError):
-            logger.warning("[User %s] /add_item invalid input: %s", user_id, args)
-            await update.message.reply_text(
-                "Invalid input. Quantity must be a whole number, price a number.\n" + MSG_ADD_ITEM_USAGE
-            )
-            return
-
-        if not name:
-            await update.message.reply_text("Item name cannot be empty.\n" + MSG_ADD_ITEM_USAGE)
-            return
+            if not name:
+                await update.message.reply_text(append_help_hint("Item name cannot be empty.\n" + MSG_ADD_ITEM_USAGE))
+                return
 
         # Call service
         service = context.bot_data["service"]
