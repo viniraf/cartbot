@@ -56,7 +56,8 @@ def safe_handler(func):
             )
             try:
                 if update and update.message:
-                    await update.message.reply_text(MSG_ERROR_GENERIC)
+                    error_msg = MSG_ERROR_GENERIC
+                    await update.message.reply_text(append_help_hint(error_msg))
             except Exception as send_err:
                 logger.error("Failed to send error message to user: %s", send_err)
 
@@ -98,12 +99,9 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     logger.info("[User %s] Purchase started with ID %s", user_id, purchase_id)
 
-    msg = (
-        "🛒 Shopping list started!\n"
-        "Use /add_item to add items. Example: /add_item Milk 2 1.50\n"
-        "Use /list_items to see all items."
-    )
-    await update.message.reply_text(append_help_hint(msg))
+    msg = "Shopping list started."
+    commands = ["", "Use /add_item to add items", "Use /list_items to see all items"]
+    await update.message.reply_text(append_help_hint(msg + "\n" + format_command_block(commands)))
 
 
 @safe_handler
@@ -133,14 +131,16 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 name, quantity, unit_price = parse_add_item_input(body)
             except ValueError as err:
                 logger.warning("[User %s] /add_item pipe parse error: %s", user_id, err)
-                msg = (
-                    "Invalid format.\n\n"
-                    "Use:\n" 
-                    "/add_item Name | qty | price\n\n"
-                    "Example:\n" 
-                    "/add_item Milk | 2 | 5.50"
-                )
-                await update.message.reply_text(append_help_hint(msg))
+                msg_lines = [
+                    "Invalid format.",
+                    "",
+                    "Use:",
+                    "/add_item Name | qty | price",
+                    "",
+                    "Example:",
+                    "/add_item Milk | 2 | 5.50",
+                ]
+                await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
                 return
         else:
             # fallback to original whitespace-separated parser for backwards compatibility
@@ -155,16 +155,23 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 name = " ".join(args[:-2])
             except (ValueError, IndexError):
                 logger.warning("[User %s] /add_item invalid input: %s", user_id, args)
-                await update.message.reply_text(
-                    append_help_hint(
-                        "Invalid input. Quantity must be a whole number, price a number.\n"
-                        + MSG_ADD_ITEM_USAGE
-                    )
-                )
+                msg_lines = [
+                    "Invalid input. Quantity must be a whole number, price a number.",
+                    "",
+                    "Use:",
+                    MSG_ADD_ITEM_USAGE.split("Usage:")[1].strip() if "Usage:" in MSG_ADD_ITEM_USAGE else MSG_ADD_ITEM_USAGE,
+                ]
+                await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
                 return
 
             if not name:
-                await update.message.reply_text(append_help_hint("Item name cannot be empty.\n" + MSG_ADD_ITEM_USAGE))
+                msg_lines = [
+                    "Item name cannot be empty.",
+                    "",
+                    "Use:",
+                    MSG_ADD_ITEM_USAGE.split("Usage:")[1].strip() if "Usage:" in MSG_ADD_ITEM_USAGE else MSG_ADD_ITEM_USAGE,
+                ]
+                await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
                 return
 
         # Call service
@@ -173,15 +180,15 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
         logger.info(f"[User {user_id}] Item '{name}' x{quantity} added to purchase {purchase_id}")
 
-        text = f"Item added. Total: {format_currency(total)}\nUse /list_items to see all items."
+        text = "Item added.\n\nTotal: " + format_currency(total) + "\n\nUse /list_items to see all items."
         await update.message.reply_text(append_help_hint(text))
 
     except NotFoundError as e:
         logger.warning("[User %s] /add_item NotFoundError: %s", update.effective_user.id, e)
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(append_help_hint(f"Error: {e}"))
     except ValidationError as e:
         logger.warning("[User %s] /add_item ValidationError: %s", update.effective_user.id, e)
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(append_help_hint(f"Error: {e}"))
 
 
 @safe_handler
@@ -202,7 +209,7 @@ async def view_total_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         total = purchase["total"]
         count = purchase["item_count"]
 
-        text = f"Total: {format_currency(total)} | Items: {count}\nUse /list_items to see item details."
+        text = "Total: " + format_currency(total) + "\n\nItems: " + str(count)
         await update.message.reply_text(append_help_hint(text))
 
     except NotFoundError as e:
@@ -230,19 +237,25 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await update.message.reply_text(append_help_hint("No items yet. Use /add_item to add items."))
             return
 
-        lines = []
+        item_lines = ["Items", ""]
         for i, item in enumerate(items, start=1):
             name = item["name"]
             qty = item["quantity"]
             price = item["unit_price"]
             subtotal = qty * price
-            lines.append(
+            item_lines.append(
                 f"{i}. {name} × {qty} @ {format_currency(price)} = {format_currency(subtotal)}"
             )
 
-        lines.append("")
-        lines.append("Use /delete_item N to remove, /edit_item N qty price to edit.")
-        await update.message.reply_text(append_help_hint(format_command_block(lines)))
+        total = sum(item["quantity"] * item["unit_price"] for item in items)
+        item_lines.append("")
+        item_lines.append(f"Total: {format_currency(total)}")
+        item_lines.append("")
+        item_lines.append("Actions:")
+        item_lines.append("/delete_item N — remove item")
+        item_lines.append("/edit_item N qty price — modify item")
+        
+        await update.message.reply_text(append_help_hint(format_command_block(item_lines)))
 
     except NotFoundError as e:
         logger.warning("[User %s] /list_items NotFoundError: %s", update.effective_user.id, e)
@@ -273,11 +286,11 @@ async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             user_index = int(args[0])
         except ValueError:
             logger.warning("[User %s] /delete_item invalid index: %s", user_id, args)
-            await update.message.reply_text("Invalid index. Use a number.\n" + MSG_DELETE_ITEM_USAGE)
+            await update.message.reply_text(append_help_hint("Invalid index. Use a number.\n\n" + MSG_DELETE_ITEM_USAGE))
             return
 
         if user_index < 1:
-            await update.message.reply_text("Index must be 1 or greater.\n" + MSG_DELETE_ITEM_USAGE)
+            await update.message.reply_text(append_help_hint("Index must be 1 or greater.\n\n" + MSG_DELETE_ITEM_USAGE))
             return
 
         # Convert 1-based (user) to 0-based (internal)
@@ -288,11 +301,11 @@ async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         logger.info(f"[User {user_id}] Item {user_index} deleted from purchase {purchase_id}")
 
-        await update.message.reply_text(append_help_hint(f"Item deleted. New total: {format_currency(total)}"))
+        await update.message.reply_text(append_help_hint(f"Item deleted.\n\nNew total: {format_currency(total)}"))
 
     except NotFoundError as e:
         logger.warning("[User %s] /delete_item NotFoundError: %s", update.effective_user.id, e)
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(append_help_hint(f"Error: {e}"))
 
 
 @safe_handler
@@ -327,7 +340,7 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             return
 
         if user_index < 1:
-            await update.message.reply_text("Index must be 1 or greater.\n" + MSG_EDIT_ITEM_USAGE)
+            await update.message.reply_text(append_help_hint("Index must be 1 or greater.\n\n" + MSG_EDIT_ITEM_USAGE))
             return
 
         item_index = user_index - 1
@@ -337,14 +350,14 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         logger.info(f"[User {user_id}] Item {user_index} edited in purchase {purchase_id}")
 
-        await update.message.reply_text(append_help_hint(f"Item updated. New total: {format_currency(total)}"))
+        await update.message.reply_text(append_help_hint(f"Item updated.\n\nNew total: {format_currency(total)}"))
 
     except NotFoundError as e:
         logger.warning("[User %s] /edit_item NotFoundError: %s", update.effective_user.id, e)
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(append_help_hint(f"Error: {e}"))
     except ValidationError as e:
         logger.warning("[User %s] /edit_item ValidationError: %s", update.effective_user.id, e)
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(append_help_hint(f"Error: {e}"))
 
 
 @safe_handler
@@ -367,10 +380,15 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         logger.info("[User %s] Purchase %s finished (total=%.2f, items=%s)", user_id, purchase_id, total, count)
 
-        text = (
-            f"Purchase finished. Total: {format_currency(total)} | Items: {count}\n"
-            "Use /start to begin a new purchase."
-        )
+        summary_lines = [
+            "Purchase finished.",
+            "",
+            f"Total: {format_currency(total)}",
+            f"Items: {count}",
+            "",
+            "/start — begin a new purchase",
+        ]
+        text = format_command_block(summary_lines)
         await update.message.reply_text(append_help_hint(text))
 
         # Clear purchase_id so next /start creates fresh purchase

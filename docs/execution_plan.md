@@ -1076,7 +1076,7 @@ Need help? Use /help
 
 ---
 
-### Step 8.5 — UX Message Standardization
+### Step 8.5 — UX Message Standardization ✅
 
 **Goal:** Make all responses visually predictable.
 
@@ -1312,7 +1312,7 @@ Precisa de ajuda? Use /help
 - [x] 8.2 — Global help command
 - [ ] 8.3 — Resume / new purchase flow
 - [x] 8.4 — Pipe-based item parsing
-- [ ] 8.5 — UX message standardization
+- [x] 8.5 — UX message standardization
 - [ ] 8.6 — Localization layer (EN + PT-BR)
 - [ ] 8.7 — Tests update for V2
 ```
