@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from .exceptions import ValidationError, NotFoundError
+from app.common.formatters import format_currency
 
 
 @dataclass(frozen=True)
@@ -39,7 +40,10 @@ class PurchaseItem:
 
     def __str__(self) -> str:
         """Human-readable representation."""
-        return f"{self.name} × {self.quantity} @ ${self.unit_price:.2f} = ${self.total_price():.2f}"
+        return (
+            f"{self.name} × {self.quantity} @ {format_currency(self.unit_price)} = "
+            f"{format_currency(self.total_price())}"
+        )
 
 
 class Purchase:
@@ -133,5 +137,5 @@ class Purchase:
         status = "ACTIVE" if self.is_active() else "FINISHED"
         return (
             f"Purchase #{self.id} [{status}] | Items: {self.item_count()} | "
-            f"Total: ${self.total():.2f}"
+            f"Total: {format_currency(self.total())}"
         )

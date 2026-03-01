@@ -20,6 +20,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from app.domain import NotFoundError, ValidationError
+from app.common.formatters import format_currency, append_help_hint, format_command_block
 
 
 logger = logging.getLogger(__name__)
@@ -96,11 +97,12 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     logger.info("[User %s] Purchase started with ID %s", user_id, purchase_id)
 
-    await update.message.reply_text(
+    msg = (
         "🛒 Shopping list started!\n"
         "Use /add_item to add items. Example: /add_item Milk 2 1.50\n"
         "Use /list_items to see all items."
     )
+    await update.message.reply_text(append_help_hint(msg))
 
 
 @safe_handler
@@ -149,9 +151,8 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
         logger.info(f"[User {user_id}] Item '{name}' x{quantity} added to purchase {purchase_id}")
 
-        await update.message.reply_text(
-            f"Item added. Total: ${total:.2f}\nUse /list_items to see all items."
-        )
+        text = f"Item added. Total: {format_currency(total)}\nUse /list_items to see all items."
+        await update.message.reply_text(append_help_hint(text))
 
     except NotFoundError as e:
         logger.warning("[User %s] /add_item NotFoundError: %s", update.effective_user.id, e)
@@ -179,9 +180,8 @@ async def view_total_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         total = purchase["total"]
         count = purchase["item_count"]
 
-        await update.message.reply_text(
-            f"Total: ${total:.2f} | Items: {count}\nUse /list_items to see item details."
-        )
+        text = f"Total: {format_currency(total)} | Items: {count}\nUse /list_items to see item details."
+        await update.message.reply_text(append_help_hint(text))
 
     except NotFoundError as e:
         logger.warning("[User %s] /view_total NotFoundError: %s", update.effective_user.id, e)
@@ -205,9 +205,7 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         items = purchase.get("items", [])
         if not items:
-            await update.message.reply_text(
-                "No items yet. Use /add_item to add items."
-            )
+            await update.message.reply_text(append_help_hint("No items yet. Use /add_item to add items."))
             return
 
         lines = []
@@ -216,11 +214,13 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             qty = item["quantity"]
             price = item["unit_price"]
             subtotal = qty * price
-            lines.append(f"{i}. {name} × {qty} @ ${price:.2f} = ${subtotal:.2f}")
+            lines.append(
+                f"{i}. {name} × {qty} @ {format_currency(price)} = {format_currency(subtotal)}"
+            )
 
         lines.append("")
         lines.append("Use /delete_item N to remove, /edit_item N qty price to edit.")
-        await update.message.reply_text("\n".join(lines))
+        await update.message.reply_text(append_help_hint(format_command_block(lines)))
 
     except NotFoundError as e:
         logger.warning("[User %s] /list_items NotFoundError: %s", update.effective_user.id, e)
@@ -266,9 +266,7 @@ async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         logger.info(f"[User {user_id}] Item {user_index} deleted from purchase {purchase_id}")
 
-        await update.message.reply_text(
-            f"Item deleted. New total: ${total:.2f}"
-        )
+        await update.message.reply_text(append_help_hint(f"Item deleted. New total: {format_currency(total)}"))
 
     except NotFoundError as e:
         logger.warning("[User %s] /delete_item NotFoundError: %s", update.effective_user.id, e)
@@ -317,9 +315,7 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         logger.info(f"[User {user_id}] Item {user_index} edited in purchase {purchase_id}")
 
-        await update.message.reply_text(
-            f"Item updated. New total: ${total:.2f}"
-        )
+        await update.message.reply_text(append_help_hint(f"Item updated. New total: {format_currency(total)}"))
 
     except NotFoundError as e:
         logger.warning("[User %s] /edit_item NotFoundError: %s", update.effective_user.id, e)
@@ -349,10 +345,11 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         logger.info("[User %s] Purchase %s finished (total=%.2f, items=%s)", user_id, purchase_id, total, count)
 
-        await update.message.reply_text(
-            f"Purchase finished. Total: ${total:.2f} | Items: {count}\n"
+        text = (
+            f"Purchase finished. Total: {format_currency(total)} | Items: {count}\n"
             "Use /start to begin a new purchase."
         )
+        await update.message.reply_text(append_help_hint(text))
 
         # Clear purchase_id so next /start creates fresh purchase
         context.user_data.pop("purchase_id", None)

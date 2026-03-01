@@ -77,11 +77,13 @@ class TestPurchaseItemValueObject:
         """Should have readable string format."""
         item = PurchaseItem(name="Milk", quantity=2, unit_price=1.50)
 
+        from app.common.formatters import format_currency
+
         item_str = str(item)
         assert "Milk" in item_str
         assert "2" in item_str
-        assert "1.50" in item_str
-        assert "3.00" in item_str
+        assert format_currency(item.unit_price) in item_str
+        assert format_currency(item.total_price()) in item_str
 
 
 class TestPurchaseAggregateRoot:
@@ -249,11 +251,13 @@ class TestPurchaseAggregateRoot:
         purchase = Purchase(id=1)
         purchase.add_item("Milk", 2, 1.50)
 
+        from app.common.formatters import format_currency
+
         purchase_str = str(purchase)
         assert "Purchase #1" in purchase_str
         assert "ACTIVE" in purchase_str
         assert "Items: 1" in purchase_str
-        assert "Total: $3.00" in purchase_str
+        assert format_currency(purchase.total()) in purchase_str
 
     def test_string_representation_finished(self):
         """Should have readable string for finished purchase."""

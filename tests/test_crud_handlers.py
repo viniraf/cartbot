@@ -69,7 +69,8 @@ class TestViewTotalHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Total" in message_text
-        assert "$3.00" in message_text
+        assert "R$" in message_text
+        assert "3.00" in message_text
         assert "Items" in message_text
         assert "1" in message_text
 
@@ -82,7 +83,8 @@ class TestViewTotalHandler:
         await view_total_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "$0.00" in message_text
+        assert "R$" in message_text
+        assert "0.00" in message_text
         assert "Items" in message_text
 
     @pytest.mark.asyncio
@@ -116,8 +118,10 @@ class TestListItemsHandler:
         assert "milk" in message_text.lower()
         assert "2." in message_text
         assert "bread" in message_text.lower()
-        assert "$3.00" in message_text  # milk subtotal
-        assert "$2.00" in message_text  # bread subtotal
+        assert "R$" in message_text  # milk subtotal
+        assert "3.00" in message_text
+        assert "R$" in message_text  # bread subtotal
+        assert "2.00" in message_text
 
     @pytest.mark.asyncio
     async def test_list_items_empty_shows_no_items(self, mock_update, mock_context):
@@ -157,7 +161,8 @@ class TestDeleteItemHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Item deleted" in message_text
-        assert "$3.00" in message_text  # Only milk left
+        assert "R$" in message_text  # Only milk left
+        assert "3.00" in message_text
 
     @pytest.mark.asyncio
     async def test_delete_item_first_item(self, mock_update, mock_context):
@@ -171,7 +176,8 @@ class TestDeleteItemHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Item deleted" in message_text
-        assert "$0.00" in message_text
+        assert "R$" in message_text
+        assert "0.00" in message_text
 
     @pytest.mark.asyncio
     async def test_delete_item_no_args_shows_usage(self, mock_update, mock_context):
@@ -210,7 +216,8 @@ class TestEditItemHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Item updated" in message_text
-        assert "$6.00" in message_text  # 3 * 2.00
+        assert "R$" in message_text  # 3 * 2.00
+        assert "6.00" in message_text
 
     @pytest.mark.asyncio
     async def test_edit_item_list_shows_updated(self, mock_update, mock_context):
@@ -227,8 +234,10 @@ class TestEditItemHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "5" in message_text
-        assert "$2.00" in message_text
-        assert "$10.00" in message_text
+        assert "R$" in message_text
+        assert "2.00" in message_text
+        assert "R$" in message_text
+        assert "10.00" in message_text
 
     @pytest.mark.asyncio
     async def test_edit_item_no_args_shows_usage(self, mock_update, mock_context):
@@ -268,7 +277,8 @@ class TestFinishHandler:
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Purchase finished" in message_text
         assert "Total" in message_text
-        assert "$3.00" in message_text
+        assert "R$" in message_text
+        assert "3.00" in message_text
         assert "Items" in message_text
         assert "1" in message_text
         assert "/start" in message_text
@@ -298,7 +308,8 @@ class TestFinishHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Purchase finished" in message_text
-        assert "$0.00" in message_text
+        assert "R$" in message_text
+        assert "0.00" in message_text
         assert "Items" in message_text
         assert "0" in message_text
         assert "purchase_id" not in mock_context.user_data

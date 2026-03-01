@@ -70,7 +70,8 @@ class TestAddItemSuccess:
         mock_update.message.reply_text.assert_called()
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Item added" in message_text
-        assert "$3.00" in message_text
+        assert "R$" in message_text
+        assert "3.00" in message_text
 
     @pytest.mark.asyncio
     async def test_add_item_multiple_items_accumulate(self, mock_update, mock_context):
