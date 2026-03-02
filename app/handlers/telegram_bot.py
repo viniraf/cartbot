@@ -1,4 +1,4 @@
-"""Telegram bot initialization and bootstrap.
+﻿"""Telegram bot initialization and bootstrap.
 
 This module sets up the Telegram bot application, handlers, and polling loop.
 It follows the modular monolith pattern, keeping handlers thin and delegating
@@ -71,6 +71,7 @@ def setup_handlers(app: Application) -> None:
         resume_handler,
         new_handler,
         help_handler,
+        lang_handler,
     )
 
     logger.info("Setting up handlers...")
@@ -86,6 +87,7 @@ def setup_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("delete_item", delete_item_handler))
     app.add_handler(CommandHandler("finish", finish_handler))
     app.add_handler(CommandHandler("help", help_handler))
+    app.add_handler(CommandHandler("lang", lang_handler))
 
     # Global error handler for uncaught exceptions
     async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -101,8 +103,8 @@ def setup_handlers(app: Application) -> None:
     app.add_error_handler(error_handler)
 
     logger.info(
-        "Handler setup complete (9 handlers: /start, /resume, /new, /add_item, /view_total, "
-        "/list_items, /edit_item, /delete_item, /finish, /help)"
+        "Handler setup complete (10 handlers: /start, /resume, /new, /add_item, /view_total, "
+        "/list_items, /edit_item, /delete_item, /finish, /help, /lang)"
     )
 
 

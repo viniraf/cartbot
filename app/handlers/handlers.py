@@ -1,4 +1,4 @@
-"""Telegram command handlers for CartBot.
+﻿"""Telegram command handlers for CartBot.
 
 This module contains all command handlers that respond to user interactions.
 Handlers are thin wrappers that:
@@ -22,6 +22,7 @@ from telegram.ext import ContextTypes
 from app.domain import NotFoundError, ValidationError
 from app.common.formatters import format_currency, append_help_hint, format_command_block
 from app.common.validators import parse_add_item_input
+from app.common.messages import format_message, set_language, get_language
 
 
 logger = logging.getLogger(__name__)
@@ -87,11 +88,11 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         Case 2: Active purchase exists
             User: /start
             Bot: "You have an active purchase..."
-                 "/resume — continue this purchase"
-                 "/new — finish and start a new one"
+                 "/resume ÔÇö continue this purchase"
+                 "/new ÔÇö finish and start a new one"
 
     Error handling:
-        - Service errors → "An error occurred. Please try again."
+        - Service errors ÔåÆ "An error occurred. Please try again."
         - Full error logged for debugging
     """
     user_id = update.effective_user.id
@@ -122,8 +123,8 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                     f"Total: {format_currency(total)}",
                     "",
                     "Options:",
-                    "/resume — continue this purchase",
-                    "/new — finish and start a new one",
+                    "/resume ÔÇö continue this purchase",
+                    "/new ÔÇö finish and start a new one",
                 ]
                 await update.message.reply_text(append_help_hint(format_command_block(prompt_lines)))
                 return
@@ -283,7 +284,7 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             price = item["unit_price"]
             subtotal = qty * price
             item_lines.append(
-                f"{i}. {name} × {qty} @ {format_currency(price)} = {format_currency(subtotal)}"
+                f"{i}. {name} ├ù {qty} @ {format_currency(price)} = {format_currency(subtotal)}"
             )
 
         total = sum(item["quantity"] * item["unit_price"] for item in items)
@@ -291,8 +292,8 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         item_lines.append(f"Total: {format_currency(total)}")
         item_lines.append("")
         item_lines.append("Actions:")
-        item_lines.append("/delete_item N — remove item")
-        item_lines.append("/edit_item N qty price — modify item")
+        item_lines.append("/delete_item N ÔÇö remove item")
+        item_lines.append("/edit_item N qty price ÔÇö modify item")
         
         await update.message.reply_text(append_help_hint(format_command_block(item_lines)))
 
@@ -425,7 +426,7 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             f"Total: {format_currency(total)}",
             f"Items: {count}",
             "",
-            "/start — begin a new purchase",
+            "/start ÔÇö begin a new purchase",
         ]
         text = format_command_block(summary_lines)
         await update.message.reply_text(append_help_hint(text))
@@ -503,9 +504,9 @@ async def resume_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             f"Total: {format_currency(total)}",
             "",
             "Actions:",
-            "/add_item — add item",
-            "/list_items — show all items",
-            "/finish — complete purchase",
+            "/add_item ÔÇö add item",
+            "/list_items ÔÇö show all items",
+            "/finish ÔÇö complete purchase",
         ]
         await update.message.reply_text(append_help_hint(format_command_block(summary_lines)))
 
@@ -587,27 +588,85 @@ async def new_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /help command by displaying all available commands.
 
-    Message is sectioned into Session, Items, and Overview groups.  Uses
-    formatting helpers for consistency and appends the standard help hint.
+    Message is sectioned into Session, Items, and Overview groups. Uses
+    message system for localization and formatting helpers for consistency.
     """
-    # Build the help text with blank lines separating sections
     lines = [
-        "Available Commands",
+        format_message(context, "HELP_TITLE"),
         "",
-        "Session",
-        "/start — start or resume a purchase",
-        "/resume — continue active purchase",
-        "/new — finish and start new purchase",
-        "/finish — finish current purchase",
+        format_message(context, "HELP_SESSION_TITLE"),
+        format_message(context, "HELP_START"),
+        format_message(context, "HELP_RESUME"),
+        format_message(context, "HELP_NEW"),
+        format_message(context, "HELP_FINISH"),
+        format_message(context, "HELP_LANG"),
         "",
-        "Items",
-        "/add_item Name | qty | price",
-        "/edit_item index qty price",
-        "/delete_item index",
+        format_message(context, "HELP_ITEMS_TITLE"),
+        format_message(context, "HELP_ADD_ITEM"),
+        format_message(context, "HELP_EDIT_ITEM"),
+        format_message(context, "HELP_DELETE_ITEM"),
         "",
-        "Overview",
-        "/view_total — show total",
-        "/list_items — show all items",
+        format_message(context, "HELP_OVERVIEW_TITLE"),
+        format_message(context, "HELP_VIEW_TOTAL"),
+        format_message(context, "HELP_LIST_ITEMS"),
     ]
     text = format_command_block(lines)
     await update.message.reply_text(append_help_hint(text))
+
+
+@safe_handler
+async def lang_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /lang command - switch language preference.
+
+    Allows user to switch between English and Portuguese (Brazil).
+    Language preference is stored per user in context.user_data.
+
+    Args:
+        update: Telegram update containing message and user info
+        context: Handler context with user_data for language storage
+
+    User flows:
+        User: /lang ptbr
+        Bot: "Idioma alterado para Portugu├¬s."
+
+        User: /lang en
+        Bot: "Language set to English."
+
+        User: /lang invalid
+        Bot: "Invalid language. Use: /lang en or /lang ptbr"
+    """
+    try:
+        user_id = update.effective_user.id
+        logger.info(f"[User {user_id}] /lang command received")
+
+        text = (update.message.text or "").strip()
+        args = text.split()[1:]
+
+        if len(args) < 1:
+            logger.warning(f"[User {user_id}] /lang missing args")
+            msg = format_message(context, "LANG_USAGE")
+            await update.message.reply_text(append_help_hint(msg))
+            return
+
+        requested_language = args[0].lower()
+
+        # Try to set the language
+        if set_language(context, requested_language):
+            logger.info(f"[User {user_id}] Language changed to {requested_language}")
+
+            # Show confirmation based on language set
+            if requested_language == "en":
+                msg = format_message(context, "LANG_SET_EN")
+            else:
+                msg = format_message(context, "LANG_SET_PTBR")
+
+            await update.message.reply_text(append_help_hint(msg))
+        else:
+            logger.warning(f"[User {user_id}] Invalid language: {requested_language}")
+            msg = format_message(context, "LANG_INVALID")
+            await update.message.reply_text(append_help_hint(msg))
+
+    except Exception as e:
+        logger.exception(f"[User {update.effective_user.id}] /lang error: {e}")
+        msg = format_message(context, "ERROR_GENERIC")
+        await update.message.reply_text(append_help_hint(msg))
