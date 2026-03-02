@@ -44,6 +44,13 @@ env/
 Thumbs.db
 
 # ==============================
+# Project Specific
+# ==============================
+PHASE_*.md
+examples_*.py
+docs/execution_plan.md
+
+# ==============================
 # IDEs
 # ==============================
 .vscode/
