@@ -255,6 +255,43 @@ class PurchaseService:
         result['is_active'] = purchase_obj.is_active()
         return result
 
+    def get_active_purchase(self, purchase_id: int) -> Optional[dict]:
+        """Check if a purchase is active (unfinished) and return its details.
+
+        Args:
+            purchase_id: ID of purchase to check.
+
+        Returns:
+            Purchase dict if found and active (finished_at is None), None otherwise.
+
+        Raises:
+            NotFoundError: If purchase ID not found.
+
+        Example:
+            purchase = service.get_active_purchase(123)
+            if purchase:
+                print(f"Purchase is active with {purchase['item_count']} items")
+        """
+        purchase = self.repository.get_by_id(purchase_id)
+        if purchase is None:
+            raise NotFoundError(f"Purchase {purchase_id} not found")
+
+        # Check if purchase is still active
+        if purchase.get('finished_at') is not None:
+            # Purchase is finished, return None
+            logger.debug(f"Purchase {purchase_id} is finished, treating as inactive")
+            return None
+
+        # Purchase is active, enrich with calculated fields
+        purchase_obj = self._dict_to_purchase(purchase)
+        result = self._purchase_to_dict(purchase_obj)
+        result['item_count'] = purchase_obj.item_count()
+        result['total'] = purchase_obj.total()
+        result['is_active'] = purchase_obj.is_active()
+
+        logger.debug(f"Retrieved active purchase {purchase_id}")
+        return result
+
     # Helper methods for domain ↔ dict conversion
 
     @staticmethod

@@ -346,25 +346,32 @@ class TestStartHandlerIntegration:
         assert purchase["is_active"] is True
 
     @pytest.mark.asyncio
-    async def test_multiple_start_commands_create_new_purchases(self, mock_update, mock_context):
-        """Calling /start twice should create two different purchases."""
+    async def test_start_shows_resume_for_active_purchase(self, mock_update, mock_context):
+        """Calling /start twice with active purchase should show resume prompt."""
         # First /start
         await start_handler(mock_update, mock_context)
         purchase_id_1 = mock_context.user_data["purchase_id"]
-        
-        # Second /start (overwrites first purchase_id)
+
+        # Reset mock to check second call
+        mock_update.message.reply_text.reset_mock()
+
+        # Second /start (should show resume prompt instead of creating new)
         await start_handler(mock_update, mock_context)
         purchase_id_2 = mock_context.user_data["purchase_id"]
-        
-        # Both purchases should exist and be different
-        assert purchase_id_1 != purchase_id_2
-        
+
+        # Both should be the same (no new purchase created)
+        assert purchase_id_1 == purchase_id_2
+
+        # Second call should show resume prompt
+        call_args = mock_update.message.reply_text.call_args[0][0]
+        assert "active purchase" in call_args.lower()
+        assert "/resume" in call_args
+        assert "/new" in call_args
+
         service = mock_context.bot_data["service"]
         p1 = service.get_purchase(purchase_id_1)
-        p2 = service.get_purchase(purchase_id_2)
-        
+
         assert p1["is_active"] is True
-        assert p2["is_active"] is True
 
 
 class TestStartHandlerEdgeCases:
@@ -384,30 +391,31 @@ class TestStartHandlerEdgeCases:
 
     @pytest.mark.asyncio
     async def test_start_concurrent_calls_same_user(self, mock_update, mock_context):
-        """Rapid /start calls should each create new purchase."""
+        """Rapid /start calls should see same active purchase."""
         import asyncio
-        
+
         # Simulate rapid calls
         tasks = [start_handler(mock_update, mock_context) for _ in range(3)]
-        
+
         # All should complete
         await asyncio.gather(*tasks)
-        
-        # Context should have the last purchase_id
+
+        # Context should have a purchase_id
         assert "purchase_id" in mock_context.user_data
         service = mock_context.bot_data["service"]
         purchase = service.get_purchase(mock_context.user_data["purchase_id"])
         assert purchase["is_active"] is True
 
     @pytest.mark.asyncio
-    async def test_start_message_emoji(self, mock_update, mock_context):
-        """start_handler message should include helpful emoji."""
+    async def test_start_message_is_clear(self, mock_update, mock_context):
+        """start_handler message should be clear and actionable."""
         await start_handler(mock_update, mock_context)
-        
+
         message_text = mock_update.message.reply_text.call_args[0][0]
-        
-        # Check for emoji in message
-        assert "🛒" in message_text or "shopping" in message_text.lower()
+
+        # Check for clear, actionable message
+        assert "shopping list started" in message_text.lower() or "purchase" in message_text.lower()
+        assert "/add_item" in message_text
 
 
 class TestStartHandlerUserData:
@@ -427,20 +435,20 @@ class TestStartHandlerUserData:
         assert mock_context.user_data["previous_key"] == "previous_value"
 
     @pytest.mark.asyncio
-    async def test_start_replaces_old_purchase_id(self, mock_update, mock_context):
-        """Calling /start twice should replace old purchase_id."""
+    async def test_start_resumes_active_purchase(self, mock_update, mock_context):
+        """Calling /start twice with active purchase should keep same ID."""
         # First call
         await start_handler(mock_update, mock_context)
         old_id = mock_context.user_data["purchase_id"]
-        
+
         # Second call
         await start_handler(mock_update, mock_context)
         new_id = mock_context.user_data["purchase_id"]
-        
-        # Should be different
-        assert old_id != new_id
-        
-        # Context should have new_id
+
+        # Should be the same (no new purchase created)
+        assert old_id == new_id
+
+        # Context should still have the same ID
         assert mock_context.user_data["purchase_id"] == new_id
 
 

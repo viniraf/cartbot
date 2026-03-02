@@ -66,22 +66,29 @@ def safe_handler(func):
 
 @safe_handler
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /start command - initialize new shopping list.
+    """Handle /start command - initialize new shopping list or resume existing.
 
     Responds to /start command by:
-    1. Creating a new purchase via service
-    2. Storing purchase_id in user context for future commands
-    3. Sending welcome message to user
-    4. Logging operation for debugging
+    1. Checking if user has an active (unfinished) purchase in context
+    2. If active purchase exists: show resume/new prompt
+    3. If no active purchase: create new purchase
+    4. Storing purchase_id in user context for future commands
+    5. Logging operation for debugging
 
     Args:
         update: Telegram update containing message and user info
         context: Handler context with bot_data (service) and user_data storage
 
-    User flow:
-        User: /start
-        Bot: "Shopping list started. /add_item to begin."
-        (Purchase ID is stored in context.user_data['purchase_id'])
+    User flows:
+        Case 1: No active purchase
+            User: /start
+            Bot: "Shopping list started. /add_item to begin."
+
+        Case 2: Active purchase exists
+            User: /start
+            Bot: "You have an active purchase..."
+                 "/resume — continue this purchase"
+                 "/new — finish and start a new one"
 
     Error handling:
         - Service errors → "An error occurred. Please try again."
@@ -93,11 +100,43 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     logger.info("[User %s] /start command received (username: %s)", user_id, username)
 
     service = context.bot_data["service"]
-    purchase_id = service.start_purchase()
 
+    # Check if user has an active purchase
+    current_purchase_id = context.user_data.get("purchase_id")
+    if current_purchase_id is not None:
+        try:
+            active_purchase = service.get_active_purchase(current_purchase_id)
+            if active_purchase is not None:
+                # Purchase is active - show resume/new prompt
+                logger.info("[User %s] Found active purchase %s", user_id, current_purchase_id)
+
+                total = active_purchase.get("total", 0)
+                created_at = active_purchase.get("created_at", "Unknown")
+                item_count = active_purchase.get("item_count", 0)
+
+                prompt_lines = [
+                    "You have an active purchase.",
+                    "",
+                    f"Created: {created_at[:10]}",
+                    f"Items: {item_count}",
+                    f"Total: {format_currency(total)}",
+                    "",
+                    "Options:",
+                    "/resume — continue this purchase",
+                    "/new — finish and start a new one",
+                ]
+                await update.message.reply_text(append_help_hint(format_command_block(prompt_lines)))
+                return
+        except NotFoundError:
+            # Purchase was deleted or doesn't exist - clear context and continue
+            logger.warning("[User %s] Active purchase %s not found, clearing context", user_id, current_purchase_id)
+            context.user_data.pop("purchase_id", None)
+
+    # No active purchase - create new one
+    purchase_id = service.start_purchase()
     context.user_data["purchase_id"] = purchase_id
 
-    logger.info("[User %s] Purchase started with ID %s", user_id, purchase_id)
+    logger.info("[User %s] New purchase started with ID %s", user_id, purchase_id)
 
     msg = "Shopping list started."
     commands = ["", "Use /add_item to add items", "Use /list_items to see all items"]
@@ -400,6 +439,151 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 @safe_handler
+async def resume_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /resume command - continue an existing active purchase.
+
+    Displays the current purchase details and confirms the session is active.
+    Requires user to have called /start which found an active purchase.
+
+    Args:
+        update: Telegram update containing message and user info
+        context: Handler context with purchase_id in user_data
+
+    User flow:
+        User: /start (sees active purchase prompt)
+        User: /resume
+        Bot: Shows purchase details, items, and total
+
+    Edge cases:
+        - Resume without active purchase: "No active purchase. Use /start to begin."
+        - Resume with deleted purchase: "Purchase not found."
+    """
+    try:
+        user_id = update.effective_user.id
+        logger.info("[User %s] /resume command received", user_id)
+
+        purchase_id = context.user_data.get("purchase_id")
+        if purchase_id is None:
+            await update.message.reply_text(append_help_hint(MSG_NO_ACTIVE_PURCHASE))
+            return
+
+        service = context.bot_data["service"]
+
+        try:
+            purchase = service.get_active_purchase(purchase_id)
+        except NotFoundError:
+            logger.warning("[User %s] /resume Purchase %s not found", user_id, purchase_id)
+            context.user_data.pop("purchase_id", None)
+            await update.message.reply_text(append_help_hint("Purchase not found."))
+            return
+
+        if purchase is None:
+            # Purchase was found but is finished (not active)
+            logger.info("[User %s] /resume Purchase %s is finished", user_id, purchase_id)
+            context.user_data.pop("purchase_id", None)
+            await update.message.reply_text(
+                append_help_hint(
+                    "This purchase is finished. Use /start to begin a new purchase."
+                )
+            )
+            return
+
+        # Purchase is active - show details
+        total = purchase.get("total", 0)
+        item_count = purchase.get("item_count", 0)
+        created_at = purchase.get("created_at", "Unknown")
+
+        logger.info("[User %s] Resumed purchase %s (items=%s, total=%.2f)", user_id, purchase_id, item_count, total)
+
+        summary_lines = [
+            "Purchase resumed.",
+            "",
+            f"Created: {created_at[:10]}",
+            f"Items: {item_count}",
+            f"Total: {format_currency(total)}",
+            "",
+            "Actions:",
+            "/add_item — add item",
+            "/list_items — show all items",
+            "/finish — complete purchase",
+        ]
+        await update.message.reply_text(append_help_hint(format_command_block(summary_lines)))
+
+    except Exception as e:
+        logger.exception("[User %s] /resume error: %s", update.effective_user.id, e)
+        await update.message.reply_text(append_help_hint(MSG_ERROR_GENERIC))
+
+
+@safe_handler
+async def new_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /new command - finish current purchase and start a new one.
+
+    Completes the active purchase and initializes a fresh purchase.
+    Provides final summary of the finished purchase.
+
+    Args:
+        update: Telegram update containing message and user info
+        context: Handler context with purchase_id in user_data
+
+    User flow:
+        User: /start (sees active purchase prompt)
+        User: /new
+        Bot: Shows summary of finished purchase, then starts new one
+
+    Edge cases:
+        - /new without active purchase: "No active purchase. Use /start to begin."
+        - /new with deleted purchase: Clean context and start fresh
+    """
+    try:
+        user_id = update.effective_user.id
+        logger.info("[User %s] /new command received", user_id)
+
+        purchase_id = context.user_data.get("purchase_id")
+        if purchase_id is None:
+            await update.message.reply_text(append_help_hint(MSG_NO_ACTIVE_PURCHASE))
+            return
+
+        service = context.bot_data["service"]
+
+        try:
+            # Finish the current purchase
+            result = service.finish_purchase(purchase_id)
+
+            total = result.get("total", 0)
+            count = result.get("item_count", 0)
+
+            logger.info("[User %s] Purchase %s finished (total=%.2f, items=%s)", user_id, purchase_id, total, count)
+
+            # Show summary of finished purchase
+            summary_lines = [
+                "Previous purchase finished.",
+                "",
+                f"Total: {format_currency(total)}",
+                f"Items: {count}",
+            ]
+            await update.message.reply_text(format_command_block(summary_lines))
+
+        except NotFoundError:
+            logger.warning("[User %s] /new Purchase %s not found, starting fresh", user_id, purchase_id)
+
+        # Clear old purchase and start new one
+        context.user_data.pop("purchase_id", None)
+        new_purchase_id = service.start_purchase()
+        context.user_data["purchase_id"] = new_purchase_id
+
+        logger.info("[User %s] New purchase started with ID %s", user_id, new_purchase_id)
+
+        # Announce new purchase
+        msg = "Shopping list started."
+        commands = ["", "Use /add_item to add items", "Use /list_items to see all items"]
+        await update.message.reply_text(append_help_hint(msg + "\n" + format_command_block(commands)))
+
+    except Exception as e:
+        logger.exception("[User %s] /new error: %s", update.effective_user.id, e)
+        await update.message.reply_text(append_help_hint(MSG_ERROR_GENERIC))
+
+
+@safe_handler
 async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /help command by displaying all available commands.
 
@@ -412,6 +596,8 @@ async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "",
         "Session",
         "/start — start or resume a purchase",
+        "/resume — continue active purchase",
+        "/new — finish and start new purchase",
         "/finish — finish current purchase",
         "",
         "Items",

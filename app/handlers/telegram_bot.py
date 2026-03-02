@@ -68,6 +68,8 @@ def setup_handlers(app: Application) -> None:
         edit_item_handler,
         delete_item_handler,
         finish_handler,
+        resume_handler,
+        new_handler,
         help_handler,
     )
 
@@ -75,6 +77,8 @@ def setup_handlers(app: Application) -> None:
 
     # Command handlers in order of priority
     app.add_handler(CommandHandler("start", start_handler))
+    app.add_handler(CommandHandler("resume", resume_handler))
+    app.add_handler(CommandHandler("new", new_handler))
     app.add_handler(CommandHandler("add_item", add_item_handler))
     app.add_handler(CommandHandler("view_total", view_total_handler))
     app.add_handler(CommandHandler("list_items", list_items_handler))
@@ -97,8 +101,8 @@ def setup_handlers(app: Application) -> None:
     app.add_error_handler(error_handler)
 
     logger.info(
-        "Handler setup complete (7 handlers: /start, /add_item, /view_total, "
-        "/list_items, /edit_item, /delete_item, /finish)"
+        "Handler setup complete (9 handlers: /start, /resume, /new, /add_item, /view_total, "
+        "/list_items, /edit_item, /delete_item, /finish, /help)"
     )
 
 
