@@ -88,8 +88,8 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         Case 2: Active purchase exists
             User: /start
             Bot: "You have an active purchase..."
-                 "/resume ÔÇö continue this purchase"
-                 "/new ÔÇö finish and start a new one"
+                 "/resume — continue this purchase"
+                 "/new — finish and start a new one"
 
     Error handling:
         - Service errors ÔåÆ "An error occurred. Please try again."
@@ -123,8 +123,8 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                     f"Total: {format_currency(total)}",
                     "",
                     "Options:",
-                    "/resume ÔÇö continue this purchase",
-                    "/new ÔÇö finish and start a new one",
+                    "/resume — continue this purchase",
+                    "/new — finish and start a new one",
                 ]
                 await update.message.reply_text(append_help_hint(format_command_block(prompt_lines)))
                 return
@@ -284,7 +284,7 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             price = item["unit_price"]
             subtotal = qty * price
             item_lines.append(
-                f"{i}. {name} ├ù {qty} @ {format_currency(price)} = {format_currency(subtotal)}"
+                f"{i}. {name} × {qty} @ {format_currency(price)} = {format_currency(subtotal)}"
             )
 
         total = sum(item["quantity"] * item["unit_price"] for item in items)
@@ -292,8 +292,8 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         item_lines.append(f"Total: {format_currency(total)}")
         item_lines.append("")
         item_lines.append("Actions:")
-        item_lines.append("/delete_item N ÔÇö remove item")
-        item_lines.append("/edit_item N qty price ÔÇö modify item")
+        item_lines.append("/delete_item N — remove item")
+        item_lines.append("/edit_item N qty price — modify item")
         
         await update.message.reply_text(append_help_hint(format_command_block(item_lines)))
 
@@ -426,7 +426,7 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             f"Total: {format_currency(total)}",
             f"Items: {count}",
             "",
-            "/start ÔÇö begin a new purchase",
+            "/start — begin a new purchase",
         ]
         text = format_command_block(summary_lines)
         await update.message.reply_text(append_help_hint(text))
@@ -504,9 +504,9 @@ async def resume_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             f"Total: {format_currency(total)}",
             "",
             "Actions:",
-            "/add_item ÔÇö add item",
-            "/list_items ÔÇö show all items",
-            "/finish ÔÇö complete purchase",
+            "/add_item — add item",
+            "/list_items — show all items",
+            "/finish — complete purchase",
         ]
         await update.message.reply_text(append_help_hint(format_command_block(summary_lines)))
 
