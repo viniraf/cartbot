@@ -1,4 +1,4 @@
-﻿"""Telegram bot initialization and bootstrap.
+"""Telegram bot initialization and bootstrap.
 
 This module sets up the Telegram bot application, handlers, and polling loop.
 It follows the modular monolith pattern, keeping handlers thin and delegating
@@ -59,7 +59,7 @@ def setup_handlers(app: Application) -> None:
     Args:
         app: The Application instance to configure.
     """
-    from telegram.ext import CommandHandler
+    from telegram.ext import CommandHandler, MessageHandler, filters
     from app.handlers.handlers import (
         start_handler,
         add_item_handler,
@@ -78,16 +78,45 @@ def setup_handlers(app: Application) -> None:
 
     # Command handlers in order of priority
     app.add_handler(CommandHandler("start", start_handler))
-    app.add_handler(CommandHandler("resume", resume_handler))
+    app.add_handler(CommandHandler("continue", resume_handler))
     app.add_handler(CommandHandler("new", new_handler))
-    app.add_handler(CommandHandler("add_item", add_item_handler))
-    app.add_handler(CommandHandler("view_total", view_total_handler))
-    app.add_handler(CommandHandler("list_items", list_items_handler))
-    app.add_handler(CommandHandler("edit_item", edit_item_handler))
-    app.add_handler(CommandHandler("delete_item", delete_item_handler))
+    app.add_handler(CommandHandler("add", add_item_handler))
+    app.add_handler(CommandHandler("total", view_total_handler))
+    app.add_handler(CommandHandler("list", list_items_handler))
+    app.add_handler(CommandHandler("edit", edit_item_handler))
+    app.add_handler(CommandHandler("delete", delete_item_handler))
     app.add_handler(CommandHandler("finish", finish_handler))
     app.add_handler(CommandHandler("help", help_handler))
     app.add_handler(CommandHandler("lang", lang_handler))
+
+    # Unknown/legacy commands fallback
+    allowed_command_pattern = r"^/(start|continue|new|add|edit|delete|list|total|finish|help|lang)(?:@[\w]+)?$"
+
+    async def unknown_command_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        text = getattr(getattr(update, "message", None), "text", "") or ""
+        cmd = (text.split()[0] if text else "").strip()
+        if not cmd:
+            return
+
+        msg = (
+            "❌ Unknown command.\n\n"
+            "Correct format:\n"
+            "`/start`\n\n"
+            "Type /help for more information."
+        )
+        try:
+            if update and getattr(update, "message", None):
+                await update.message.reply_text(msg)
+        except Exception:
+            # If sending fails, we still don't want the bot to crash.
+            return
+
+    app.add_handler(
+        MessageHandler(
+            filters.COMMAND & ~filters.Regex(allowed_command_pattern),
+            unknown_command_handler,
+        )
+    )
 
     # Global error handler for uncaught exceptions
     async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -103,8 +132,8 @@ def setup_handlers(app: Application) -> None:
     app.add_error_handler(error_handler)
 
     logger.info(
-        "Handler setup complete (10 handlers: /start, /resume, /new, /add_item, /view_total, "
-        "/list_items, /edit_item, /delete_item, /finish, /help, /lang)"
+        "Handler setup complete (10 handlers: /start, /continue, /new, /add, /total, "
+        "/list, /edit, /delete, /finish, /help, /lang)"
     )
 
 

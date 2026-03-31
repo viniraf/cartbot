@@ -40,8 +40,8 @@ class TestHelpHandler:
         assert "Overview" in text
         # Check for some specific commands
         assert "/start" in text
-        assert "/add_item" in text
-        assert "/view_total" in text
+        assert "/add" in text
+        assert "/total" in text
         # Help hint appended
         assert "Need help? Use /help" in text
 

@@ -124,7 +124,7 @@ class TestStartHandlerSuccess:
         # Verify message content
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Shopping list started" in message_text
-        assert "/add_item" in message_text
+        assert "/add" in message_text
 
     @pytest.mark.asyncio
     async def test_start_message_includes_example(self, mock_update, mock_context):
@@ -132,7 +132,7 @@ class TestStartHandlerSuccess:
         await start_handler(mock_update, mock_context)
         
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "Milk 2 1.50" in message_text or "add_item" in message_text
+        assert "/add" in message_text
 
     @pytest.mark.asyncio
     async def test_start_multiple_users_isolated(self, mock_context):
@@ -365,7 +365,7 @@ class TestStartHandlerIntegration:
         # Second call should show resume prompt
         call_args = mock_update.message.reply_text.call_args[0][0]
         assert "active purchase" in call_args.lower()
-        assert "/resume" in call_args
+        assert "/continue" in call_args
         assert "/new" in call_args
 
         service = mock_context.bot_data["service"]
@@ -415,7 +415,7 @@ class TestStartHandlerEdgeCases:
 
         # Check for clear, actionable message
         assert "shopping list started" in message_text.lower() or "purchase" in message_text.lower()
-        assert "/add_item" in message_text
+        assert "/add" in message_text
 
 
 class TestStartHandlerUserData:

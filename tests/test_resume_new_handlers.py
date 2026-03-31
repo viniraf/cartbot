@@ -105,7 +105,7 @@ def mock_context_empty(test_db):
 # Tests for /resume
 
 class TestResumeHandlerSuccess:
-    """Test successful /resume command handling."""
+    """Test successful /continue command handling."""
 
     @pytest.mark.asyncio
     async def test_resume_active_purchase(self, mock_update, mock_context_with_purchase):
@@ -129,11 +129,11 @@ class TestResumeHandlerSuccess:
         assert "2" in call_args  # item count
         assert "19.00" in call_args  # total (2*5.50 + 1*8.00 = 11.00 + 8.00 = 19.00)
         assert "Created:" in call_args
-        assert "/add_item" in call_args  # suggest next action
+        assert "/add" in call_args  # suggest next action
 
 
 class TestResumeHandlerErrors:
-    """Test error cases for /resume command."""
+    """Test error cases for /continue command."""
 
     @pytest.mark.asyncio
     async def test_resume_no_active_purchase(self, mock_update, mock_context_empty):
@@ -284,7 +284,7 @@ class TestResumeNewIntegration:
         mock_update.message.reply_text.assert_called_once()
         call_args = mock_update.message.reply_text.call_args[0][0]
         assert "active purchase" in call_args.lower()
-        assert "/resume" in call_args
+        assert "/continue" in call_args
         assert "/new" in call_args
 
         # Verify purchase_id was NOT changed

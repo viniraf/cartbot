@@ -56,14 +56,14 @@ def mock_update():
 
 
 class TestAddItemSuccess:
-    """Test successful /add_item handling."""
+    """Test successful /add handling."""
 
     @pytest.mark.asyncio
     async def test_add_item_responds_with_total(self, mock_update, mock_context):
         """add_item_handler should add item and respond with total."""
         # First /start to create purchase
         await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add_item milk 2 1.50"
+        mock_update.message.text = "/add milk 2 1.50"
 
         await add_item_handler(mock_update, mock_context)
 
@@ -78,10 +78,10 @@ class TestAddItemSuccess:
         """Multiple items should accumulate total correctly."""
         await start_handler(mock_update, mock_context)
 
-        mock_update.message.text = "/add_item milk 2 1.50"
+        mock_update.message.text = "/add milk 2 1.50"
         await add_item_handler(mock_update, mock_context)
 
-        mock_update.message.text = "/add_item bread 1 2.00"
+        mock_update.message.text = "/add bread 1 2.00"
         await add_item_handler(mock_update, mock_context)
 
         service = mock_context.bot_data["service"]
@@ -95,7 +95,7 @@ class TestAddItemSuccess:
     async def test_add_item_multiword_name(self, mock_update, mock_context):
         """add_item should accept multi-word item names."""
         await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add_item organic milk 1 2.50"
+        mock_update.message.text = "/add organic milk 1 2.50"
 
         await add_item_handler(mock_update, mock_context)
 
@@ -112,7 +112,7 @@ class TestAddItemSuccess:
     async def test_add_item_pipe_format(self, mock_update, mock_context):
         """New pipe-separated syntax should be accepted."""
         await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add_item Milk | 2 | 1.50"
+        mock_update.message.text = "/add Milk | 2 | 1.50"
 
         await add_item_handler(mock_update, mock_context)
 
@@ -130,20 +130,20 @@ class TestAddItemValidation:
     async def test_add_item_no_args_shows_usage(self, mock_update, mock_context):
         """add_item with no args should show usage message."""
         await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add_item"
+        mock_update.message.text = "/add"
 
         await add_item_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Usage" in message_text
-        assert "add_item" in message_text
+        assert "/add" in message_text
         assert "Example" in message_text
 
     @pytest.mark.asyncio
     async def test_add_item_two_args_shows_usage(self, mock_update, mock_context):
         """add_item with only 2 args should show usage."""
         await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add_item milk 2"
+        mock_update.message.text = "/add milk 2"
 
         await add_item_handler(mock_update, mock_context)
 
@@ -155,19 +155,19 @@ class TestAddItemValidation:
         """Malformed pipe syntax should prompt format error."""
         await start_handler(mock_update, mock_context)
         # missing one segment
-        mock_update.message.text = "/add_item Milk | 2"
+        mock_update.message.text = "/add Milk | 2"
 
         await add_item_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Invalid format" in message_text
-        assert "/add_item Name | qty | price" in message_text
+        assert "/add Name | qty | price" in message_text
 
     @pytest.mark.asyncio
     async def test_add_item_invalid_quantity_rejects(self, mock_update, mock_context):
         """add_item with non-numeric quantity should reject."""
         await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add_item milk abc 1.50"
+        mock_update.message.text = "/add milk abc 1.50"
 
         await add_item_handler(mock_update, mock_context)
 
@@ -178,7 +178,7 @@ class TestAddItemValidation:
     async def test_add_item_invalid_price_rejects(self, mock_update, mock_context):
         """add_item with non-numeric price should reject."""
         await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add_item milk 2 xyz"
+        mock_update.message.text = "/add milk 2 xyz"
 
         await add_item_handler(mock_update, mock_context)
 
@@ -192,7 +192,7 @@ class TestAddItemNoPurchase:
     @pytest.mark.asyncio
     async def test_add_item_without_start_shows_message(self, mock_update, mock_context):
         """add_item without /start should prompt to use /start."""
-        mock_update.message.text = "/add_item milk 2 1.50"
+        mock_update.message.text = "/add milk 2 1.50"
         # No start_handler call - user_data has no purchase_id
 
         await add_item_handler(mock_update, mock_context)
@@ -209,7 +209,7 @@ class TestAddItemDomainErrors:
     async def test_add_item_negative_quantity_validation_error(self, mock_update, mock_context):
         """add_item with negative quantity should send Error message."""
         await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add_item milk -1 1.50"
+        mock_update.message.text = "/add milk -1 1.50"
 
         await add_item_handler(mock_update, mock_context)
 

@@ -1,4 +1,4 @@
-﻿"""English message strings for CartBot.
+"""English message strings for CartBot.
 
 All user-facing messages are centralized here for:
 1. Consistency across the bot
@@ -95,17 +95,17 @@ MESSAGES = {
     "HELP_TITLE": "Available Commands",
     "HELP_SESSION_TITLE": "Session",
     "HELP_START": "/start ÔÇö start or resume a purchase",
-    "HELP_RESUME": "/resume ÔÇö continue active purchase",
+    "HELP_RESUME": "/continue ÔÇö continue active purchase",
     "HELP_NEW": "/new ÔÇö finish and start new purchase",
     "HELP_FINISH": "/finish ÔÇö finish current purchase",
     "HELP_LANG": "/lang [en|ptbr] ÔÇö change language",
     "HELP_ITEMS_TITLE": "Items",
-    "HELP_ADD_ITEM": "/add_item Name | qty | price",
-    "HELP_EDIT_ITEM": "/edit_item index qty price",
-    "HELP_DELETE_ITEM": "/delete_item index",
+    "HELP_ADD_ITEM": "/add Name | qty | price",
+    "HELP_EDIT_ITEM": "/edit index qty price",
+    "HELP_DELETE_ITEM": "/delete index",
     "HELP_OVERVIEW_TITLE": "Overview",
-    "HELP_VIEW_TOTAL": "/view_total ÔÇö show total",
-    "HELP_LIST_ITEMS": "/list_items ÔÇö show all items",
+    "HELP_VIEW_TOTAL": "/total ÔÇö show total",
+    "HELP_LIST_ITEMS": "/list ÔÇö show all items",
 
     # /lang command
     "LANG_SET_EN": "Language set to English.",

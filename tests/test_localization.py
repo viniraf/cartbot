@@ -1,4 +1,4 @@
-﻿"""Tests for localization system (Phase 8.6).
+"""Tests for localization system (Phase 8.6).
 
 Tests cover:
 - Message retrieval for both languages
@@ -58,9 +58,9 @@ class TestMessageRetrieval:
         """Command names should not be translated."""
         msg_en = get_message("en", "HELP_ADD_ITEM")
         msg_pt = get_message("ptbr", "HELP_ADD_ITEM")
-        # Both should contain /add_item
-        assert "/add_item" in msg_en
-        assert "/add_item" in msg_pt
+        # Both should contain /add
+        assert "/add" in msg_en
+        assert "/add" in msg_pt
 
 
 class TestLanguageSwitching:
