@@ -48,9 +48,26 @@ def init_db(db_path=None):
             CREATE TABLE IF NOT EXISTS purchases (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                finished_at TIMESTAMP NULL
+                finished_at TIMESTAMP NULL,
+                store_name TEXT NOT NULL DEFAULT 'Unknown'
             )
         """)
+
+        # Migration: add store_name to existing databases
+        # SQLite doesn't support adding constraints to existing columns, so we ensure
+        # the column exists as NOT NULL with a default/backfill value.
+        cursor.execute("PRAGMA table_info(purchases)")
+        purchases_columns = {row[1]: row for row in cursor.fetchall()}
+        if "store_name" not in purchases_columns:
+            cursor.execute(
+                """
+                ALTER TABLE purchases
+                ADD COLUMN store_name TEXT NOT NULL DEFAULT 'Unknown'
+                """
+            )
+        else:
+            # If the column exists, we still backfill any unexpected NULLs.
+            cursor.execute("UPDATE purchases SET store_name = 'Unknown' WHERE store_name IS NULL")
         
         # Create purchase_items table
         cursor.execute("""

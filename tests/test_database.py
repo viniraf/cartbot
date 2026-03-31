@@ -67,6 +67,7 @@ class TestDatabaseInitialization:
         assert "id" in columns
         assert "created_at" in columns
         assert "finished_at" in columns
+        assert "store_name" in columns
 
     def test_init_db_purchase_items_table_has_correct_columns(self, temp_db_path):
         """purchase_items table should have required columns."""
