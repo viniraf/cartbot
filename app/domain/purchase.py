@@ -59,6 +59,7 @@ class Purchase:
         items: Optional[List[PurchaseItem]] = None,
         created_at: Optional[str] = None,
         finished_at: Optional[str] = None,
+        store_name: Optional[str] = None,
     ):
         """Initialize a purchase.
 
@@ -68,10 +69,18 @@ class Purchase:
             created_at: ISO timestamp when created (default: now).
             finished_at: ISO timestamp when finished (default: None for active).
         """
+        if store_name is None or not isinstance(store_name, str):
+            raise ValidationError("store_name is required and must be a string")
+
+        normalized_store_name = store_name.strip()
+        if not normalized_store_name:
+            raise ValidationError("store_name must be a non-empty string")
+
         self.id = id
         self.items: List[PurchaseItem] = items or []
         self.created_at = created_at or datetime.now().isoformat()
         self.finished_at = finished_at
+        self.store_name = normalized_store_name
 
     def add_item(self, name: str, quantity: int, unit_price: float) -> None:
         """Add an item to the purchase.
