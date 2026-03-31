@@ -39,6 +39,7 @@ class SQLitePurchaseRepository(BaseRepository):
                         'id': int or None,
                         'created_at': ISO timestamp string,
                         'finished_at': ISO timestamp string or None,
+                        'store_name': str,
                         'items': [
                             {'name': str, 'quantity': int, 'unit_price': float},
                             ...
@@ -52,16 +53,21 @@ class SQLitePurchaseRepository(BaseRepository):
         try:
             cursor = conn.cursor()
 
+            store_name = entity.get("store_name")
+            if store_name is None or not isinstance(store_name, str) or not store_name.strip():
+                raise ValueError("store_name is required and must be a non-empty string")
+
             if entity.get('id') is None:
                 # Insert new purchase
                 cursor.execute(
                     """
-                    INSERT INTO purchases (created_at, finished_at)
-                    VALUES (?, ?)
+                    INSERT INTO purchases (created_at, finished_at, store_name)
+                    VALUES (?, ?, ?)
                     """,
                     (
                         entity.get('created_at') or datetime.now().isoformat(),
                         entity.get('finished_at'),
+                        store_name,
                     ),
                 )
                 entity['id'] = cursor.lastrowid
@@ -71,10 +77,10 @@ class SQLitePurchaseRepository(BaseRepository):
                 cursor.execute(
                     """
                     UPDATE purchases
-                    SET finished_at = ?
+                    SET finished_at = ?, store_name = ?
                     WHERE id = ?
                     """,
-                    (entity.get('finished_at'), entity['id']),
+                    (entity.get('finished_at'), store_name, entity['id']),
                 )
                 logger.info(f"Updated purchase {entity['id']}")
 
@@ -123,7 +129,7 @@ class SQLitePurchaseRepository(BaseRepository):
             # Get purchase
             cursor.execute(
                 """
-                SELECT id, created_at, finished_at
+                SELECT id, created_at, finished_at, store_name
                 FROM purchases
                 WHERE id = ?
                 """,
@@ -138,6 +144,7 @@ class SQLitePurchaseRepository(BaseRepository):
                 'id': row[0],
                 'created_at': row[1],
                 'finished_at': row[2],
+                'store_name': row[3],
                 'items': [],
             }
 

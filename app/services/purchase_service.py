@@ -43,8 +43,20 @@ class PurchaseService:
             purchase_id = service.start_purchase()
             # Now purchase_id can be used with add_item, finish_purchase, etc.
         """
-        # Create new domain entity
-        purchase = Purchase()
+        # Legacy entry point: handlers call this without store_name.
+        # Until handler flows are updated, we create purchases with a non-empty placeholder.
+        return self.create_purchase(store_name="Unknown")
+
+    def create_purchase(self, store_name: str) -> int:
+        """Create a new purchase and save it to the repository.
+
+        Args:
+            store_name: Store name (required).
+
+        Returns:
+            ID of the newly created purchase.
+        """
+        purchase = Purchase(store_name=store_name)
 
         # Convert to dict for persistence
         purchase_dict = self._purchase_to_dict(purchase)
@@ -310,6 +322,7 @@ class PurchaseService:
             id=purchase_dict.get('id'),
             created_at=purchase_dict.get('created_at'),
             finished_at=purchase_dict.get('finished_at'),
+            store_name=purchase_dict.get('store_name'),
         )
 
         # Reconstruct items from dicts
@@ -338,6 +351,7 @@ class PurchaseService:
             'id': purchase.id,
             'created_at': purchase.created_at,
             'finished_at': purchase.finished_at,
+            'store_name': purchase.store_name,
             'items': [
                 {
                     'name': item.name,

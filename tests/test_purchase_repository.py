@@ -34,6 +34,7 @@ class TestSQLitePurchaseRepositorySave:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [],
         }
 
@@ -49,6 +50,7 @@ class TestSQLitePurchaseRepositorySave:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [
                 {'name': 'Milk', 'quantity': 2, 'unit_price': 1.50, 'created_at': datetime.now().isoformat()},
                 {'name': 'Bread', 'quantity': 1, 'unit_price': 2.00, 'created_at': datetime.now().isoformat()},
@@ -67,6 +69,7 @@ class TestSQLitePurchaseRepositorySave:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [{'name': 'Milk', 'quantity': 1, 'unit_price': 1.50, 'created_at': datetime.now().isoformat()}],
         }
         repo.save(purchase)
@@ -92,6 +95,7 @@ class TestSQLitePurchaseRepositorySave:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [
                 {'name': 'Item1', 'quantity': 1, 'unit_price': 1.0, 'created_at': datetime.now().isoformat()},
                 {'name': 'Item2', 'quantity': 1, 'unit_price': 2.0, 'created_at': datetime.now().isoformat()},
@@ -122,6 +126,7 @@ class TestSQLitePurchaseRepositoryGetById:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [{'name': 'Test Item', 'quantity': 5, 'unit_price': 9.99, 'created_at': datetime.now().isoformat()}],
         }
         repo.save(purchase)
@@ -148,6 +153,7 @@ class TestSQLitePurchaseRepositoryGetById:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [],
         }
         repo.save(purchase)
@@ -164,6 +170,7 @@ class TestSQLitePurchaseRepositoryGetById:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [
                 {'name': 'First', 'quantity': 1, 'unit_price': 1.0, 'created_at': datetime.now().isoformat()},
                 {'name': 'Second', 'quantity': 2, 'unit_price': 2.0, 'created_at': datetime.now().isoformat()},
@@ -189,6 +196,7 @@ class TestSQLitePurchaseRepositoryDelete:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [],
         }
         repo.save(purchase)
@@ -208,6 +216,7 @@ class TestSQLitePurchaseRepositoryDelete:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [
                 {'name': 'Item1', 'quantity': 1, 'unit_price': 1.0, 'created_at': datetime.now().isoformat()},
                 {'name': 'Item2', 'quantity': 2, 'unit_price': 2.0, 'created_at': datetime.now().isoformat()},
@@ -235,12 +244,14 @@ class TestSQLitePurchaseRepositoryDelete:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [{'name': 'Item1', 'quantity': 1, 'unit_price': 1.0, 'created_at': datetime.now().isoformat()}],
         }
         purchase2 = {
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [{'name': 'Item2', 'quantity': 2, 'unit_price': 2.0, 'created_at': datetime.now().isoformat()}],
         }
         repo.save(purchase1)
@@ -264,6 +275,7 @@ class TestSQLitePurchaseRepositoryIntegration:
             'id': None,
             'created_at': datetime.now().isoformat(),
             'finished_at': None,
+            'store_name': 'Test Store',
             'items': [
                 {'name': 'Milk', 'quantity': 1, 'unit_price': 1.50, 'created_at': datetime.now().isoformat()},
             ],
@@ -297,6 +309,7 @@ class TestSQLitePurchaseRepositoryIntegration:
                 'id': None,
                 'created_at': datetime.now().isoformat(),
                 'finished_at': None,
+                'store_name': 'Test Store',
                 'items': [
                     {'name': f'Item{i}', 'quantity': i + 1, 'unit_price': float(i + 1), 'created_at': datetime.now().isoformat()},
                 ],
