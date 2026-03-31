@@ -8,7 +8,7 @@ to the service layer for business logic.
 import logging
 from telegram.ext import Application, ContextTypes
 
-from app.infra import Config
+from app.infra import Config, init_db
 from app.services import PurchaseService
 from app.infra.repositories import SQLitePurchaseRepository
 
@@ -23,6 +23,7 @@ def create_app() -> Application:
     - Application instance with the bot token
     - Context settings for user and bot data storage
     - Service layer in bot context (dependency injection)
+    - Database initialization
 
     Returns:
         Application: Configured bot application instance.
@@ -31,6 +32,9 @@ def create_app() -> Application:
         ValueError: If TELEGRAM_TOKEN is invalid or missing.
     """
     logger.info("Initializing Telegram bot application...")
+
+    # Initialize database (idempotent - safe to call multiple times)
+    init_db(Config.DATABASE_PATH)
 
     # Create application with token from config
     app = Application.builder().token(Config.TELEGRAM_TOKEN).build()

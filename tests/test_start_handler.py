@@ -485,3 +485,212 @@ class TestStartHandlerServiceIntegration:
         assert isinstance(purchase["item_count"], int)
         assert isinstance(purchase["total"], (int, float))
         assert isinstance(purchase["is_active"], bool)
+
+
+class TestStartHandlerLocale:
+    """Test localization parameter support for /start command."""
+
+    @pytest.mark.asyncio
+    async def test_start_with_en_locale(self, mock_update, mock_context):
+        """start_handler should accept /start en parameter."""
+        mock_update.message.text = "/start en"
+        
+        await start_handler(mock_update, mock_context)
+        
+        # Should create purchase successfully
+        assert "purchase_id" in mock_context.user_data
+        purchase_id = mock_context.user_data["purchase_id"]
+        
+        # Verify locale is stored in purchase
+        service = mock_context.bot_data["service"]
+        purchase = service.get_purchase(purchase_id)
+        assert purchase["locale"] == "en"
+
+    @pytest.mark.asyncio
+    async def test_start_with_ptbr_locale(self, mock_update, mock_context):
+        """start_handler should accept /start ptbr parameter."""
+        mock_update.message.text = "/start ptbr"
+        
+        await start_handler(mock_update, mock_context)
+        
+        # Should create purchase successfully
+        assert "purchase_id" in mock_context.user_data
+        purchase_id = mock_context.user_data["purchase_id"]
+        
+        # Verify locale is stored in purchase
+        service = mock_context.bot_data["service"]
+        purchase = service.get_purchase(purchase_id)
+        assert purchase["locale"] == "ptbr"
+
+    @pytest.mark.asyncio
+    async def test_start_with_invalid_locale(self, mock_update, mock_context):
+        """start_handler should reject invalid locale parameter."""
+        mock_update.message.text = "/start fr"
+        
+        await start_handler(mock_update, mock_context)
+        
+        # Should NOT create purchase
+        assert "purchase_id" not in mock_context.user_data
+        
+        # Should send error message
+        mock_update.message.reply_text.assert_called_once()
+        message_text = mock_update.message.reply_text.call_args[0][0]
+        assert "Invalid locale" in message_text
+        assert "en" in message_text
+        assert "ptbr" in message_text
+
+    @pytest.mark.asyncio
+    async def test_start_with_spaces_in_locale_param(self, mock_update, mock_context):
+        """start_handler should handle /start en with extra spaces."""
+        mock_update.message.text = "/start   en   "
+        
+        await start_handler(mock_update, mock_context)
+        
+        # Should create purchase successfully
+        assert "purchase_id" in mock_context.user_data
+        purchase_id = mock_context.user_data["purchase_id"]
+        
+        service = mock_context.bot_data["service"]
+        purchase = service.get_purchase(purchase_id)
+        assert purchase["locale"] == "en"
+
+    @pytest.mark.asyncio
+    async def test_start_sets_language_in_context(self, mock_update, mock_context):
+        """start_handler should set language in user context."""
+        mock_update.message.text = "/start ptbr"
+        
+        await start_handler(mock_update, mock_context)
+        
+        # Language should be set in context
+        assert "language" in mock_context.user_data
+        assert mock_context.user_data["language"] == "ptbr"
+
+    @pytest.mark.asyncio
+    async def test_start_default_locale_en(self, mock_update, mock_context):
+        """start_handler without locale param should use EN by default."""
+        mock_update.message.text = "/start"
+        
+        await start_handler(mock_update, mock_context)
+        
+        # Should create purchase successfully
+        assert "purchase_id" in mock_context.user_data
+        purchase_id = mock_context.user_data["purchase_id"]
+        
+        # Default should be 'en'
+        service = mock_context.bot_data["service"]
+        purchase = service.get_purchase(purchase_id)
+        assert purchase["locale"] == "en"
+
+    @pytest.mark.asyncio
+    async def test_start_invalid_locale_preserves_old_language(self, mock_update, mock_context):
+        """Invalid locale param should not change existing language setting."""
+        # Set initial language to ptbr
+        mock_context.user_data["language"] = "ptbr"
+        
+        # Try to set to invalid locale
+        mock_update.message.text = "/start de"
+        
+        await start_handler(mock_update, mock_context)
+        
+        # Language should remain ptbr (unchanged by error)
+        assert mock_context.user_data["language"] == "ptbr"
+
+    @pytest.mark.asyncio
+    async def test_start_multiple_invalid_locales(self, mock_update, mock_context):
+        """start_handler should reject various invalid locales."""
+        invalid_locales = ["fr", "es", "de", "ja", "123", "en_US", "pt-br"]
+        
+        for invalid_locale in invalid_locales:
+            # Reset context for each test
+            mock_context.user_data = {}
+            mock_update.message.text = f"/start {invalid_locale}"
+            mock_update.message.reply_text.reset_mock()
+            
+            await start_handler(mock_update, mock_context)
+            
+            # Should not create purchase
+            assert "purchase_id" not in mock_context.user_data
+            
+            # Should send error message
+            mock_update.message.reply_text.assert_called_once()
+            message_text = mock_update.message.reply_text.call_args[0][0]
+            assert "Invalid locale" in message_text
+
+    @pytest.mark.asyncio
+    async def test_start_locale_affects_messages(self, mock_update, mock_context):
+        """Locale parameter should be stored and accessible for message formatting."""
+        mock_update.message.text = "/start ptbr"
+        
+        await start_handler(mock_update, mock_context)
+        
+        purchase_id = mock_context.user_data["purchase_id"]
+        service = mock_context.bot_data["service"]
+        purchase = service.get_purchase(purchase_id)
+        
+        # Locale should be accessible for formatting messages
+        assert "locale" in purchase
+        assert purchase["locale"] in ["en", "ptbr"]
+
+    @pytest.mark.asyncio
+    async def test_start_en_creates_valid_purchase(self, mock_update, mock_context):
+        """Purchase created with /start en should be fully functional."""
+        mock_update.message.text = "/start en"
+        
+        await start_handler(mock_update, mock_context)
+        
+        purchase_id = mock_context.user_data["purchase_id"]
+        service = mock_context.bot_data["service"]
+        
+        # Should be able to add items to the purchase
+        total = service.add_item(purchase_id, "Apple", 3, 2.50)
+        
+        assert total == 7.50
+        
+        purchase = service.get_purchase(purchase_id)
+        assert purchase["locale"] == "en"
+        assert purchase["item_count"] == 1
+
+    @pytest.mark.asyncio
+    async def test_start_ptbr_creates_valid_purchase(self, mock_update, mock_context):
+        """Purchase created with /start ptbr should be fully functional."""
+        mock_update.message.text = "/start ptbr"
+        
+        await start_handler(mock_update, mock_context)
+        
+        purchase_id = mock_context.user_data["purchase_id"]
+        service = mock_context.bot_data["service"]
+        
+        # Should be able to add items to the purchase
+        total = service.add_item(purchase_id, "Maçã", 3, 2.50)
+        
+        assert total == 7.50
+        
+        purchase = service.get_purchase(purchase_id)
+        assert purchase["locale"] == "ptbr"
+        assert purchase["item_count"] == 1
+
+    @pytest.mark.asyncio
+    async def test_start_locale_case_sensitive(self, mock_update, mock_context):
+        """Locale parameter should be case-sensitive (only lowercase accepted)."""
+        # Test uppercase EN
+        mock_update.message.text = "/start EN"
+        
+        await start_handler(mock_update, mock_context)
+        
+        # Should be rejected (case-sensitive)
+        assert "purchase_id" not in mock_context.user_data
+        
+        message_text = mock_update.message.reply_text.call_args[0][0]
+        assert "Invalid locale" in message_text
+
+    @pytest.mark.asyncio
+    async def test_start_locale_logs_language_change(self, mock_update, mock_context, caplog):
+        """start_handler should log when language is changed."""
+        mock_update.message.text = "/start ptbr"
+        
+        with caplog.at_level(logging.INFO):
+            await start_handler(mock_update, mock_context)
+        
+        # Should log language change
+        log_text = " ".join([record.message for record in caplog.records])
+        assert "Language set to" in log_text or "ptbr" in log_text.lower()

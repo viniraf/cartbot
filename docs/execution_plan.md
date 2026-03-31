@@ -1,4 +1,4 @@
-# CartBot Execution Plan
+﻿# CartBot Execution Plan
 
 ## TL;DR
 
@@ -1268,6 +1268,306 @@ Precisa de ajuda? Use /help
 - ❌ Missing edge case tests (decimal rounding, language fallback, etc.)
 - ❌ Flaky tests that depend on timing or external state
 
+# Phase 9: UX Optimization & Controlled Flow (V3)
+
+## Goal
+
+Finalize UX optimization, enforce controlled command-only flows,
+introduce mandatory store name, support batch item input, and guarantee
+deterministic behavior for future scalability.
+
+This document is fully aligned with the official Phase 9 checklist
+order.
+
+------------------------------------------------------------------------
+
+# 9.1 --- Domain Update (store_name required)
+
+Purchase entity must include:
+
+store_name: str (required)
+
+Rules: - Required field - Trim whitespace - Non-empty validation - Raise
+ValidationError if empty
+
+No purchase can exist without a store name.
+
+------------------------------------------------------------------------
+
+# 9.2 --- Database Migration (store_name NOT NULL)
+
+Changes required:
+
+-   Add `store_name` column to purchases table
+-   NOT NULL constraint
+-   Migration script required
+
+Migration must ensure no legacy null values remain.
+
+------------------------------------------------------------------------
+
+# 9.3 --- Repository Update (persist & load store_name)
+
+Repository must:
+
+-   Persist store_name
+-   Load store_name
+-   Include store_name in resume logic
+-   Include store_name in finish summary
+
+------------------------------------------------------------------------
+
+# 9.4 --- Service Layer Update (create_purchase with store_name)
+
+Update signature:
+
+create_purchase(store_name: str)
+
+Rules:
+
+-   Cannot create purchase without store_name
+-   Resume logic must return store_name
+-   Service validates before persistence
+
+------------------------------------------------------------------------
+
+# 9.5 --- Command Simplification (single-word commands)
+
+Final Command List:
+
+/start /continue /new /add /edit /delete /list /total /finish /help
+
+Rules:
+
+-   Exactly one word after `/`
+-   No aliases
+-   No free-text interpretation
+-   Legacy commands must stop working
+-   All flows must respond only to commands
+
+------------------------------------------------------------------------
+
+# 9.6 --- /start Localization Parameter Support
+
+Accepted formats:
+
+/start /start ptbr /start enus
+
+Rules:
+
+-   Default locale if omitted
+-   ptbr sets PT-BR
+-   enus sets EN-US
+-   Any other parameter → structured error
+
+------------------------------------------------------------------------
+
+# 9.7 --- Resume Control Commands (/continue, /new)
+
+## /continue
+
+-   Only works if active purchase exists
+-   Returns to active purchase
+-   Does not modify store_name
+-   If none active → structured error
+
+## /new
+
+-   Only works if active purchase exists
+-   Finishes current purchase
+-   Triggers guided store name flow
+-   If none active → structured error
+
+------------------------------------------------------------------------
+
+# 9.8 --- Guided Store Name Flow (Mandatory)
+
+Triggered when:
+
+-   No active purchase after /start
+-   User selects /new
+
+Prompt:
+
+PT: Qual o nome do estabelecimento? EN: What is the store name?
+
+Rules:
+
+-   Required
+-   Trim whitespace
+-   Validated at domain level
+
+------------------------------------------------------------------------
+
+# 9.9 --- Comma-Based /add Format (Inline + Batch)
+
+Accepted formats:
+
+Inline: 
+/add 19.90,feijao 
+/add 19.90,3,feijao
+
+Batch: 
+/add 
+19.90,feijao 
+20.50,2,file de frango 
+5.30,miojo
+
+Parsing rules:
+
+-   Separator: comma
+-   Order: price, quantity(optional), name
+-   Default quantity = 1
+-   Quantity > 0 integer
+-   Price > 0 decimal
+-   Name non-empty
+-   /add without body → structured error
+
+------------------------------------------------------------------------
+
+# 9.10 --- Add Handler Refactor (Dedicated Parser)
+
+Create function:
+
+parse_add_input(raw_text) -> List[ParsedItem]
+
+Parser responsibilities:
+
+-   Split multiline input
+-   Validate each line
+-   Apply default quantity
+-   Convert price to decimal
+-   Validate name
+-   Raise structured errors
+
+Handler responsibilities:
+
+-   Call parser
+-   Loop through parsed items
+-   Call service
+-   Return formatted response
+
+------------------------------------------------------------------------
+
+# 9.11 --- Physical Unit Counting Consistency
+
+Example:
+
+/add 5.90,3,feijao
+
+System must:
+
+-   Add 3 units
+-   Respond: 3 items added
+-   Increase total items by 3
+
+Must reflect in:
+
+-   /add
+-   /total
+-   /finish
+-   Resume summary
+
+------------------------------------------------------------------------
+
+# 9.12 --- Post-Add Summary Redesign
+
+EN:
+
+X items added.
+
+Total items: <physical_units_sum>
+Total amount: <formatted_total>
+
+PT:
+
+X itens adicionados.
+
+Total de itens: <physical_units_sum>
+Valor total: <formatted_total>
+
+Rules:
+
+-   Items added = physical units
+-   Total items = sum of quantities
+-   Total amount = sum(quantity × price)
+-   Locale formatting applied
+
+------------------------------------------------------------------------
+
+# 9.13 --- Unified Error Message Structure
+
+EN:
+
+❌ <Clear Title>
+
+Short explanation.
+
+Correct format: 
+/command example_here
+
+Type /help for more information.
+
+PT:
+
+❌ <Título claro>
+
+Explicação curta.
+
+Formato correto: 
+/comando exemplo_aqui
+
+Digite /help para mais informações.
+
+Rules:
+
+-   Always include command example
+-   Always include help footer
+-   Apply to all commands and invalid states
+
+------------------------------------------------------------------------
+
+# 9.14 --- /finish Summary Includes Store Name
+
+PT:
+
+Compra finalizada.
+
+Estabelecimento: <store_name>
+Total de itens: `<sum>
+Valor final: <formatted_total>
+
+EN equivalent required.
+
+------------------------------------------------------------------------
+
+# 9.15 --- Manual End-to-End Validation
+
+Required scenarios:
+
+1.  /start ptbr
+2.  Active purchase → test /continue
+3.  Active purchase → test /new
+4.  Guided store flow
+5.  Inline add
+6.  Batch add
+7.  Mixed quantities
+8.  Error consistency (EN + PT)
+9.  Full purchase cycle
+
+Must confirm:
+
+-   No legacy commands
+-   No free-text interpretation
+-   Store name always displayed
+-   Batch predictable
+-   Error structure identical everywhere
+-   All tests passing
+
+------------------------------------------------------------------------
+
+END OF PHASE 9
+
 ---
 
 ## Progress Checklist
@@ -1310,11 +1610,34 @@ Precisa de ajuda? Use /help
 ## Phase 8: UX & Localization (V2)
 - [x] 8.1 — Message formatting layer
 - [x] 8.2 — Global help command
-- [ ] 8.3 — Resume / new purchase flow
+- [x] 8.3 — Resume / new purchase flow
 - [x] 8.4 — Pipe-based item parsing
 - [x] 8.5 — UX message standardization
-- [ ] 8.6 — Localization layer (EN + PT-BR)
-- [ ] 8.7 — Tests update for V2
+- [x] 8.6 — Localization layer (EN + PT-BR)
+- [x] 8.7 — Tests update for V2
+
+## Phase 9: UX Optimization & Controlled Flow (V3)
+
+- [ ] 9.1 — Domain update (store_name required)
+- [ ] 9.2 — Database migration (store_name NOT NULL)
+- [ ] 9.3 — Repository update (persist & load store_name)
+- [ ] 9.4 — Service layer update (create_purchase with store_name)
+
+- [ ] 9.5 — Command simplification (single-word commands)
+- [ ] 9.6 — /start localization parameter support
+- [ ] 9.7 — Resume control commands (/continue, /new)
+- [ ] 9.8 — Guided store name flow (mandatory)
+
+- [ ] 9.9 — Comma-based /add format (inline + batch)
+- [ ] 9.10 — Add handler refactor (dedicated parser)
+
+- [ ] 9.11 — Physical unit counting consistency
+- [ ] 9.12 — Post-add summary redesign (units + total clarity)
+
+- [ ] 9.13 — Unified error message structure
+- [ ] 9.14 — /finish summary includes store name
+
+- [ ] 9.15 — Manual end-to-end validation
 ```
 
 ---

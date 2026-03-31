@@ -1,4 +1,4 @@
-"""PurchaseService - orchestrates domain logic and repository persistence.
+﻿"""PurchaseService - orchestrates domain logic and repository persistence.
 
 Services are stateless coordinators that:
 1. Load entities from repository
@@ -33,34 +33,18 @@ class PurchaseService:
         """
         self.repository = repository
 
-    def start_purchase(self, locale: str = 'en') -> int:
+    def start_purchase(self) -> int:
         """Start a new purchase and save to repository.
-
-        Args:
-            locale: Language locale ('en' or 'ptbr', default: 'en').
 
         Returns:
             ID of the newly created purchase.
 
         Example:
-            purchase_id = service.start_purchase(locale='ptbr')
+            purchase_id = service.start_purchase()
             # Now purchase_id can be used with add_item, finish_purchase, etc.
         """
-        # Legacy entry point: handlers call this without store_name.
-        # Until handler flows are updated, we create purchases with a non-empty placeholder.
-        return self.create_purchase(store_name="Unknown", locale=locale)
-
-    def create_purchase(self, store_name: str, locale: str = 'en') -> int:
-        """Create a new purchase and save it to the repository.
-
-        Args:
-            store_name: Store name (required).
-            locale: Language locale ('en' or 'ptbr', default: 'en').
-
-        Returns:
-            ID of the newly created purchase.
-        """
-        purchase = Purchase(store_name=store_name, locale=locale)
+        # Create new domain entity
+        purchase = Purchase()
 
         # Convert to dict for persistence
         purchase_dict = self._purchase_to_dict(purchase)
@@ -308,14 +292,14 @@ class PurchaseService:
         logger.debug(f"Retrieved active purchase {purchase_id}")
         return result
 
-    # Helper methods for domain ↔ dict conversion
+    # Helper methods for domain Ôåö dict conversion
 
     @staticmethod
     def _dict_to_purchase(purchase_dict: dict) -> Purchase:
         """Convert dict (from repository) to Purchase domain object.
 
         Args:
-            purchase_dict: Dict with id, items, created_at, finished_at, locale.
+            purchase_dict: Dict with id, items, created_at, finished_at.
 
         Returns:
             Purchase domain object.
@@ -326,8 +310,6 @@ class PurchaseService:
             id=purchase_dict.get('id'),
             created_at=purchase_dict.get('created_at'),
             finished_at=purchase_dict.get('finished_at'),
-            store_name=purchase_dict.get('store_name'),
-            locale=purchase_dict.get('locale', 'en'),
         )
 
         # Reconstruct items from dicts
@@ -350,14 +332,12 @@ class PurchaseService:
             purchase: Purchase domain object.
 
         Returns:
-            Dict with id, items, created_at, finished_at, locale.
+            Dict with id, items, created_at, finished_at.
         """
         return {
             'id': purchase.id,
             'created_at': purchase.created_at,
             'finished_at': purchase.finished_at,
-            'store_name': purchase.store_name,
-            'locale': purchase.locale,
             'items': [
                 {
                     'name': item.name,

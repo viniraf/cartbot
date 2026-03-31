@@ -69,6 +69,21 @@ def init_db(db_path=None):
             # If the column exists, we still backfill any unexpected NULLs.
             cursor.execute("UPDATE purchases SET store_name = 'Unknown' WHERE store_name IS NULL")
         
+        # Migration: add locale to existing databases
+        # Refresh column info after adding store_name
+        cursor.execute("PRAGMA table_info(purchases)")
+        purchases_columns = {row[1]: row for row in cursor.fetchall()}
+        if "locale" not in purchases_columns:
+            cursor.execute(
+                """
+                ALTER TABLE purchases
+                ADD COLUMN locale TEXT NOT NULL DEFAULT 'en'
+                """
+            )
+        else:
+            # If the column exists, we still backfill any unexpected NULLs.
+            cursor.execute("UPDATE purchases SET locale = 'en' WHERE locale IS NULL")
+        
         # Create purchase_items table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS purchase_items (

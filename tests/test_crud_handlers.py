@@ -293,6 +293,8 @@ class TestFinishHandler:
         mock_update.message.text = "/finish"
         await finish_handler(mock_update, mock_context)
 
+        # Reset message.text for /start call
+        mock_update.message.text = "/start"
         await start_handler(mock_update, mock_context)
         purchase_id_2 = mock_context.user_data["purchase_id"]
 

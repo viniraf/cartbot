@@ -69,30 +69,41 @@ def safe_handler(func):
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /start command - initialize new shopping list or resume existing.
 
+    Supports localization parameters:
+    - /start → use current or default locale
+    - /start en → set EN-US
+    - /start ptbr → set PT-BR
+    - /start [other] → error
+
     Responds to /start command by:
-    1. Checking if user has an active (unfinished) purchase in context
-    2. If active purchase exists: show resume/new prompt
-    3. If no active purchase: create new purchase
-    4. Storing purchase_id in user context for future commands
-    5. Logging operation for debugging
+    1. Parsing optional locale parameter
+    2. Validating locale and setting user language
+    3. Checking if user has an active (unfinished) purchase in context
+    4. If active purchase exists: show resume/new prompt
+    5. If no active purchase: create new purchase with locale
+    6. Storing purchase_id in user context for future commands
+    7. Logging operation for debugging
 
     Args:
         update: Telegram update containing message and user info
         context: Handler context with bot_data (service) and user_data storage
 
     User flows:
-        Case 1: No active purchase
+        Case 1: No active purchase, no locale param
             User: /start
-            Bot: "Shopping list started. /add_item to begin."
+            Bot: "Shopping list started. /add to begin."
 
-        Case 2: Active purchase exists
-            User: /start
-            Bot: "You have an active purchase..."
-                 "/resume — continue this purchase"
-                 "/new — finish and start a new one"
+        Case 2: No active purchase, with locale param
+            User: /start ptbr
+            Bot: "Shopping list started. /add para adicionar itens."
+
+        Case 3: Invalid locale param
+            User: /start fr
+            Bot: "Error: Invalid locale. Supported: en, ptbr"
 
     Error handling:
-        - Service errors ÔåÆ "An error occurred. Please try again."
+        - Service errors → "An error occurred. Please try again."
+        - Invalid locale → "Error: Invalid locale. Supported: en, ptbr"
         - Full error logged for debugging
     """
     user_id = update.effective_user.id
@@ -101,6 +112,37 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     logger.info("[User %s] /start command received (username: %s)", user_id, username)
 
     service = context.bot_data["service"]
+    
+    # Parse optional locale parameter from command
+    text = update.message.text if update.message.text else ""
+    if isinstance(text, str):
+        text = text.strip()
+    else:
+        text = ""
+    
+    locale = None
+    
+    if text and len(text) > len("/start"):
+        # Extract locale parameter (if present)
+        param = text[len("/start"):].strip()
+        
+        if param:
+            # Validate locale
+            if param not in ["en", "ptbr"]:
+                error_msg = "Error: Invalid locale. Supported: en, ptbr"
+                logger.warning("[User %s] Invalid locale param: %s", user_id, param)
+                await update.message.reply_text(append_help_hint(error_msg))
+                return
+            
+            locale = param
+    
+    # Use current or default locale if not specified
+    if locale is None:
+        locale = get_language(context)
+    else:
+        # Set language in user context
+        set_language(context, locale)
+        logger.info("[User %s] Language set to %s", user_id, locale)
 
     # Check if user has an active purchase
     current_purchase_id = context.user_data.get("purchase_id")
@@ -133,11 +175,11 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             logger.warning("[User %s] Active purchase %s not found, clearing context", user_id, current_purchase_id)
             context.user_data.pop("purchase_id", None)
 
-    # No active purchase - create new one
-    purchase_id = service.start_purchase()
+    # No active purchase - create new one with locale
+    purchase_id = service.start_purchase(locale=locale)
     context.user_data["purchase_id"] = purchase_id
 
-    logger.info("[User %s] New purchase started with ID %s", user_id, purchase_id)
+    logger.info("[User %s] New purchase started with ID %s (locale: %s)", user_id, purchase_id, locale)
 
     msg = "Shopping list started."
     commands = ["", "Use /add to add items", "Use /list to see all items"]

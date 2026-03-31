@@ -57,17 +57,20 @@ class SQLitePurchaseRepository(BaseRepository):
             if store_name is None or not isinstance(store_name, str) or not store_name.strip():
                 raise ValueError("store_name is required and must be a non-empty string")
 
+            locale = entity.get('locale', 'en')
+            
             if entity.get('id') is None:
                 # Insert new purchase
                 cursor.execute(
                     """
-                    INSERT INTO purchases (created_at, finished_at, store_name)
-                    VALUES (?, ?, ?)
+                    INSERT INTO purchases (created_at, finished_at, store_name, locale)
+                    VALUES (?, ?, ?, ?)
                     """,
                     (
                         entity.get('created_at') or datetime.now().isoformat(),
                         entity.get('finished_at'),
                         store_name,
+                        locale,
                     ),
                 )
                 entity['id'] = cursor.lastrowid
@@ -77,10 +80,10 @@ class SQLitePurchaseRepository(BaseRepository):
                 cursor.execute(
                     """
                     UPDATE purchases
-                    SET finished_at = ?, store_name = ?
+                    SET finished_at = ?, store_name = ?, locale = ?
                     WHERE id = ?
                     """,
-                    (entity.get('finished_at'), store_name, entity['id']),
+                    (entity.get('finished_at'), store_name, locale, entity['id']),
                 )
                 logger.info(f"Updated purchase {entity['id']}")
 
@@ -129,7 +132,7 @@ class SQLitePurchaseRepository(BaseRepository):
             # Get purchase
             cursor.execute(
                 """
-                SELECT id, created_at, finished_at, store_name
+                SELECT id, created_at, finished_at, store_name, locale
                 FROM purchases
                 WHERE id = ?
                 """,
@@ -145,6 +148,7 @@ class SQLitePurchaseRepository(BaseRepository):
                 'created_at': row[1],
                 'finished_at': row[2],
                 'store_name': row[3],
+                'locale': row[4] if len(row) > 4 else 'en',
                 'items': [],
             }
 
