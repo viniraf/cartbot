@@ -76,6 +76,7 @@ def setup_handlers(app: Application) -> None:
         new_handler,
         help_handler,
         lang_handler,
+        store_input_handler,
     )
 
     logger.info("Setting up handlers...")
@@ -92,6 +93,14 @@ def setup_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("finish", finish_handler))
     app.add_handler(CommandHandler("help", help_handler))
     app.add_handler(CommandHandler("lang", lang_handler))
+
+    # Message handler for free-text store input (high priority, before command fallback)
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            store_input_handler,
+        )
+    )
 
     # Unknown/legacy commands fallback
     allowed_command_pattern = r"^/(start|continue|new|add|edit|delete|list|total|finish|help|lang)(?:@[\w]+)?$"
@@ -136,8 +145,8 @@ def setup_handlers(app: Application) -> None:
     app.add_error_handler(error_handler)
 
     logger.info(
-        "Handler setup complete (10 handlers: /start, /continue, /new, /add, /total, "
-        "/list, /edit, /delete, /finish, /help, /lang)"
+        "Handler setup complete (11 handlers: /start, /continue, /new, /add, /total, "
+        "/list, /edit, /delete, /finish, /help, /lang + store input handler)"
     )
 
 

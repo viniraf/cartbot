@@ -113,6 +113,11 @@ MESSAGES = {
     "LANG_INVALID": "Idioma inválido. Use: /lang en ou /lang ptbr",
     "LANG_USAGE": "Uso: /lang [en|ptbr]\n\nExemplo:\n/lang ptbr - mudar para Português\n/lang en - mudar para Inglês",
 
+    # Store name input
+    "STORE_PROMPT": "Qual o nome do estabelecimento?",
+    "STORE_INVALID": "O nome do estabelecimento não pode estar vazio. Tente novamente.",
+    "STORE_CREATED": "Estabelecimento: {store_name}",
+
     # General/errors
     "ERROR_GENERIC": "Ocorreu um erro. Tente novamente mais tarde.",
     "HELP_HINT": "Precisa de ajuda? Use /help",

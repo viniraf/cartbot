@@ -175,15 +175,12 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             logger.warning("[User %s] Active purchase %s not found, clearing context", user_id, current_purchase_id)
             context.user_data.pop("purchase_id", None)
 
-    # No active purchase - create new one with locale
-    purchase_id = service.start_purchase(locale=locale)
-    context.user_data["purchase_id"] = purchase_id
-
-    logger.info("[User %s] New purchase started with ID %s (locale: %s)", user_id, purchase_id, locale)
-
-    msg = "Shopping list started."
-    commands = ["", "Use /add to add items", "Use /list to see all items"]
-    await update.message.reply_text(append_help_hint(msg + "\n" + format_command_block(commands)))
+    # No active purchase - request store name
+    context.user_data["waiting_for_store_input"] = True
+    logger.info("[User %s] Prompting for store name", user_id)
+    
+    prompt_msg = format_message(context, "STORE_PROMPT")
+    await update.message.reply_text(append_help_hint(prompt_msg))
 
 
 @safe_handler
@@ -196,6 +193,13 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     try:
         user_id = update.effective_user.id
         logger.info(f"[User {user_id}] /add command received")
+
+        # Check if waiting for store input (flow lock - must define store first)
+        if context.user_data.get("waiting_for_store_input"):
+            logger.info(f"[User {user_id}] /add blocked: waiting for store input")
+            store_prompt = format_message(context, "STORE_PROMPT")
+            await update.message.reply_text(append_help_hint(store_prompt))
+            return
 
         # Check for active purchase
         purchase_id = context.user_data.get("purchase_id")
@@ -609,20 +613,14 @@ async def new_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         except NotFoundError:
             logger.warning("[User %s] /new Purchase %s not found, starting fresh", user_id, purchase_id)
 
-        # Clear old purchase and start new one
+        # Clear old purchase and request store name for new one
         context.user_data.pop("purchase_id", None)
+        context.user_data["waiting_for_store_input"] = True
         
-        # Preserve locale setting when creating new purchase
-        locale = get_language(context)
-        new_purchase_id = service.start_purchase(locale=locale)
-        context.user_data["purchase_id"] = new_purchase_id
-
-        logger.info("[User %s] New purchase started with ID %s (locale: %s)", user_id, new_purchase_id, locale)
-
-        # Announce new purchase
-        msg = "Shopping list started."
-        commands = ["", "Use /add to add items", "Use /list to see all items"]
-        await update.message.reply_text(append_help_hint(msg + "\n" + format_command_block(commands)))
+        logger.info("[User %s] Prompting for store name for new purchase", user_id)
+        
+        prompt_msg = format_message(context, "STORE_PROMPT")
+        await update.message.reply_text(append_help_hint(prompt_msg))
 
     except Exception as e:
         logger.exception("[User %s] /new error: %s", update.effective_user.id, e)
@@ -714,3 +712,75 @@ async def lang_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         logger.exception(f"[User {update.effective_user.id}] /lang error: {e}")
         msg = format_message(context, "ERROR_GENERIC")
         await update.message.reply_text(append_help_hint(msg))
+
+
+@safe_handler
+async def store_input_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle free-text input for store name when waiting_for_store_input flag is set.
+
+    This handler processes user text input when the bot is waiting for a store name.
+    It validates the input (non-empty, trimmed) and creates a purchase with that store name.
+
+    Args:
+        update: Telegram update containing message text
+        context: Handler context with user_data for state management
+
+    User flow:
+        Bot: "What is the store name?"
+        User: "Whole Foods"
+        Bot: "Store: Whole Foods"
+    """
+    try:
+        user_id = update.effective_user.id
+
+        # Only process if waiting for store input
+        if not context.user_data.get("waiting_for_store_input"):
+            logger.debug(f"[User {user_id}] Received text but not waiting for store, ignoring")
+            return
+
+        logger.info(f"[User {user_id}] Processing store input")
+
+        # Get and validate store name
+        store_name = (update.message.text or "").strip() if update.message.text else ""
+
+        if not store_name:
+            logger.info(f"[User {user_id}] Empty store name provided")
+            error_msg = format_message(context, "STORE_INVALID")
+            await update.message.reply_text(append_help_hint(error_msg))
+            return
+
+        # Create purchase with store name
+        try:
+            service = context.bot_data["service"]
+            locale = get_language(context)
+            purchase_id = service.create_purchase(store_name=store_name, locale=locale)
+
+            # Clear waiting flag and store purchase_id
+            context.user_data["waiting_for_store_input"] = False
+            context.user_data["purchase_id"] = purchase_id
+
+            logger.info(f"[User {user_id}] Purchase created with store '{store_name}', id={purchase_id}")
+
+            # Show success with store name
+            success_msg = format_message(context, "STORE_CREATED", store_name=store_name)
+            next_steps_lines = [
+                success_msg,
+                "",
+                "Next steps:",
+                "/add name qty price — add items",
+                "/list — view items",
+                "/finish — complete purchase",
+            ]
+            await update.message.reply_text(
+                append_help_hint(format_command_block(next_steps_lines))
+            )
+
+        except (NotFoundError, ValidationError) as e:
+            logger.error(f"[User {user_id}] Failed to create purchase: {e}")
+            error_msg = format_message(context, "ERROR_GENERIC")
+            await update.message.reply_text(append_help_hint(error_msg))
+
+    except Exception as e:
+        logger.exception(f"[User {update.effective_user.id}] Store input error: {e}")
+        error_msg = format_message(context, "ERROR_GENERIC")
+        await update.message.reply_text(append_help_hint(error_msg))
