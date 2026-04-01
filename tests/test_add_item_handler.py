@@ -271,7 +271,7 @@ class TestAddItemAccumulation:
 
     @pytest.mark.asyncio
     async def test_add_batch_with_errors(self, mock_update, mock_context):
-        """Batch with some valid and invalid items."""
+        """Batch with invalid item should fail entirely (Phase 9.10)."""
         purchase_id = await setup_active_purchase(mock_context)
         
         batch_input = """/add
@@ -282,12 +282,13 @@ invalid_line
         mock_update.message.text = batch_input
         await add_item_handler(mock_update, mock_context)
         
-        # Should show partial success with errors
+        # Should fail entirely with error message
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        # Should indicate some items were added and some failed
-        assert "✓" in response or "added" in response.lower()
-        assert "Error" in response or "⚠" in response
+        # Should show error for invalid item
+        assert "❌" in response or "Invalid" in response
+        # Should show NO items were added
+        assert "✓" not in response
 
 
 class TestAddItemWaitingForStore:

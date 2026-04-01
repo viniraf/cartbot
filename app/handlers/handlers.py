@@ -21,7 +21,7 @@ from telegram.ext import ContextTypes
 
 from app.domain import NotFoundError, ValidationError
 from app.common.formatters import format_currency, append_help_hint, format_command_block
-from app.common.validators import parse_add_item_input
+from app.common.validators import parse_add_item_input, parse_add_input
 from app.common.messages import format_message, set_language, get_language
 
 
@@ -185,7 +185,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 @safe_handler
 async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /add command - add items to active purchase (Phase 9.9).
+    """Handle /add command - add items to active purchase (Phase 9.10).
 
     Supports two formats:
     
@@ -200,6 +200,7 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         5.30,miojo
     
     Requires purchase_id in context (from /start).
+    Uses dedicated parser from validators.parse_add_input.
     """
     try:
         user_id = update.effective_user.id
@@ -240,95 +241,59 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
             return
         
-        # Extract content after /add command
-        lines = text.split("\n")
-        command_line = lines[0].strip()
-        inline_content = command_line[len("/add"):].strip()
-        
-        # Detect format
-        is_inline = bool(inline_content)  # Has content on same line as command
-        is_batch = len(lines) > 1  # Has content on following lines
-        
-        if not is_inline and not is_batch:
-            # Just /add with no content
-            logger.info(f"[User {user_id}] /add with no content")
+        # Parse input using dedicated parser (validates all items before returning)
+        try:
+            parsed_items = parse_add_input(text)
+        except ValueError as e:
+            logger.warning(f"[User {user_id}] /add parse error: {e}")
             msg_lines = [
-                "Please provide items to add.",
+                f"❌ Invalid format",
                 "",
-                "Inline format: /add price,item_name",
-                "or /add price,qty,item_name",
+                str(e),
                 "",
-                "Batch format: /add",
-                "price,item_name",
-                "price,qty,item_name",
+                "Correct format:",
+                "Inline: /add price,item",
+                "or: /add price,qty,item",
+                "",
+                "Batch: /add",
+                "price,item",
+                "price,qty,item",
             ]
             await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
             return
         
-        # Collect items to add
-        items_to_add = []
-        
-        if is_inline:
-            # Inline format: parse single line
-            logger.info(f"[User {user_id}] /add inline format detected")
-            if inline_content:
-                items_to_add.append(inline_content)
-        
-        if is_batch:
-            # Batch format: parse following lines
-            logger.info(f"[User {user_id}] /add batch format detected ({len(lines)-1} lines)")
-            for line in lines[1:]:
-                line = line.strip()
-                if line:
-                    items_to_add.append(line)
-        
-        if not items_to_add:
-            logger.warning(f"[User {user_id}] /add no items after parsing")
-            await update.message.reply_text(append_help_hint("No items to add."))
-            return
-        
-        # Process each item (delegate to parsing function)
+        # Process items (all validated at this point)
         service = context.bot_data["service"]
         
-        successful_adds = 0
-        errors = []
+        items_added = 0
+        total_physical_units = 0
         
-        for item_line in items_to_add:
+        for parsed_item in parsed_items:
+            name = parsed_item["name"]
+            qty = parsed_item["quantity"]
+            price = parsed_item["price"]
+            
             try:
-                name, quantity, unit_price = parse_add_item_input(item_line)
-                total = service.add_item(purchase_id, name, quantity, unit_price)
-                successful_adds += 1
-                logger.info(f"[User {user_id}] Item '{name}' x{quantity} added to purchase {purchase_id}")
-            except ValueError as e:
-                logger.warning(f"[User {user_id}] /add parse error: {e}")
-                errors.append(f"• {item_line}: {str(e)}")
+                service.add_item(purchase_id, name, qty, price)
+                items_added += 1
+                total_physical_units += qty
+                logger.info(f"[User {user_id}] Item '{name}' x{qty} added to purchase {purchase_id}")
+            except (NotFoundError, ValidationError) as e:
+                logger.error(f"[User {user_id}] /add service error: {e}")
+                await update.message.reply_text(append_help_hint(f"Error adding item: {e}"))
+                return
         
-        # Build response
-        response_lines = []
-        if successful_adds > 0:
-            response_lines.append(f"✓ {successful_adds} item(s) added.")
-            total = service.get_purchase(purchase_id)["total"]
-            response_lines.append(f"\nTotal: {format_currency(total)}")
-            response_lines.append("\nUse /list to see all items.")
+        # Build success response
+        purchase = service.get_purchase(purchase_id)
+        final_total = purchase["total"]
+        final_item_count = purchase["item_count"]
         
-        if errors:
-            response_lines.append("\n⚠ Errors:")
-            response_lines.extend(errors)
-            response_lines.append("\nFormat: price,item OR price,qty,item")
-        
-        if not successful_adds and errors:
-            # All items failed
-            msg_lines = [
-                "Could not add items. Check format:",
-                "",
-                "Inline: /add price,item",
-                "or /add price,qty,item",
-                "",
-                "Errors:"
-            ]
-            msg_lines.extend(errors)
-            await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
-            return
+        response_lines = [
+            f"✓ {items_added} item(s) added.",
+            "",
+            f"Total items: {final_item_count}",
+            f"Total amount: {format_currency(final_total)}",
+        ]
         
         await update.message.reply_text(append_help_hint("\n".join(response_lines)))
 
