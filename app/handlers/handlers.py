@@ -283,16 +283,20 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 await update.message.reply_text(append_help_hint(f"Error adding item: {e}"))
                 return
         
-        # Build success response
+        # Build success response with locale-aware messages
         purchase = service.get_purchase(purchase_id)
         final_total = purchase["total"]
         final_item_count = purchase["item_count"]
         
+        items_added_msg = format_message(context, "ADD_ITEMS_COUNT", count=items_added)
+        total_items_msg = format_message(context, "ADD_TOTAL_ITEMS", item_count=final_item_count)
+        total_amount_msg = format_message(context, "ADD_TOTAL_AMOUNT", total=format_currency(final_total))
+        
         response_lines = [
-            f"✓ {items_added} item(s) added.",
+            items_added_msg,
             "",
-            f"Total items: {final_item_count}",
-            f"Total amount: {format_currency(final_total)}",
+            total_items_msg,
+            total_amount_msg,
         ]
         
         await update.message.reply_text(append_help_hint("\n".join(response_lines)))

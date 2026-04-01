@@ -51,6 +51,11 @@ MESSAGES = {
     "ADD_ITEM_INVALID_FORMAT": "Formato inválido.",
     "ADD_ITEM_INVALID_FORMAT_HELP": "Use:\n/add_item Nome | qty | preço\n\nExemplo:\n/add_item Leite | 2 | 5.50",
 
+    # /add command (Phase 9.12)
+    "ADD_ITEMS_COUNT": "{count} itens adicionados.",
+    "ADD_TOTAL_ITEMS": "Total de itens: {item_count}",
+    "ADD_TOTAL_AMOUNT": "Valor total: {total}",
+
     # /list_items command
     "LIST_ITEMS_TITLE": "Itens",
     "LIST_ITEMS_EMPTY": "Nenhum item ainda.",

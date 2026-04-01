@@ -96,7 +96,7 @@ class TestAddItemInlineCommaFormat:
         # Should respond with success
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        assert "✓" in response or "added" in response.lower()
+        assert "added" in response.lower()  # "items added" or "itens adicionados"
         
         # Verify item was added with correct quantity
         service = mock_context.bot_data["service"]
@@ -115,7 +115,7 @@ class TestAddItemInlineCommaFormat:
         # Should respond with success
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        assert "✓" in response or "added" in response.lower()
+        assert "added" in response.lower()  # "items added" or "itens adicionados"
 
 
 class TestAddItemBatchCommaFormat:
@@ -137,8 +137,8 @@ class TestAddItemBatchCommaFormat:
         # Should respond with success
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        assert "✓" in response or "added" in response.lower()
-        assert "3 item" in response  # Should show 3 items added
+        assert "added" in response.lower()  # "items added" or "itens adicionados"
+        assert "3 items added" in response.lower()  # Should show 3 items added
         
         # Verify all items were added
         service = mock_context.bot_data["service"]
