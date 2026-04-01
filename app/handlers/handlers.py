@@ -185,9 +185,20 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 @safe_handler
 async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /add command - add item to active purchase.
+    """Handle /add command - add items to active purchase (Phase 9.9).
 
-    Parses input: /add [name] [quantity] [unit_price]
+    Supports two formats:
+    
+    Inline:
+        /add 19.90,feijao
+        /add 19.90,3,feijao
+    
+    Batch (multiline):
+        /add
+        19.90,feijao
+        20.50,2,file de frango
+        5.30,miojo
+    
     Requires purchase_id in context (from /start).
     """
     try:
@@ -208,66 +219,118 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             return
 
         text = (update.message.text or "").strip()
-        # drop the command itself
-        body = text[len("/add") :].strip()
-
-        # try new pipe-based syntax first
-        if "|" in body:
-            try:
-                name, quantity, unit_price = parse_add_item_input(body)
-            except ValueError as err:
-                logger.warning("[User %s] /add pipe parse error: %s", user_id, err)
-                msg_lines = [
-                    "Invalid format.",
-                    "",
-                    "Use:",
-                    "/add Name | qty | price",
-                    "",
-                    "Example:",
-                    "/add Milk | 2 | 5.50",
-                ]
-                await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
-                return
-        else:
-            # fallback to original whitespace-separated parser for backwards compatibility
-            args = body.split()
-            if len(args) < 3:
-                logger.warning("[User %s] /add invalid args: %s", user_id, args)
-                await update.message.reply_text(append_help_hint(MSG_ADD_ITEM_USAGE))
-                return
-            try:
-                quantity = int(args[-2])
-                unit_price = float(args[-1])
-                name = " ".join(args[:-2])
-            except (ValueError, IndexError):
-                logger.warning("[User %s] /add invalid input: %s", user_id, args)
-                msg_lines = [
-                    "Invalid input. Quantity must be a whole number, price a number.",
-                    "",
-                    "Use:",
-                    MSG_ADD_ITEM_USAGE.split("Usage:")[1].strip() if "Usage:" in MSG_ADD_ITEM_USAGE else MSG_ADD_ITEM_USAGE,
-                ]
-                await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
-                return
-
-            if not name:
-                msg_lines = [
-                    "Item name cannot be empty.",
-                    "",
-                    "Use:",
-                    MSG_ADD_ITEM_USAGE.split("Usage:")[1].strip() if "Usage:" in MSG_ADD_ITEM_USAGE else MSG_ADD_ITEM_USAGE,
-                ]
-                await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
-                return
-
-        # Call service
+        
+        # Reject pipe-based format (old format)
+        if "|" in text:
+            logger.warning("[User %s] /add pipe format rejected (old format)", user_id)
+            msg_lines = [
+                "Pipe format (|) is no longer supported.",
+                "",
+                "Use comma-based format instead:",
+                "",
+                "Inline:",
+                "/add 19.90,feijao",
+                "/add 19.90,3,feijao",
+                "",
+                "Batch:",
+                "/add",
+                "19.90,feijao",
+                "20.50,2,file de frango",
+            ]
+            await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
+            return
+        
+        # Extract content after /add command
+        lines = text.split("\n")
+        command_line = lines[0].strip()
+        inline_content = command_line[len("/add"):].strip()
+        
+        # Detect format
+        is_inline = bool(inline_content)  # Has content on same line as command
+        is_batch = len(lines) > 1  # Has content on following lines
+        
+        if not is_inline and not is_batch:
+            # Just /add with no content
+            logger.info(f"[User {user_id}] /add with no content")
+            msg_lines = [
+                "Please provide items to add.",
+                "",
+                "Inline format: /add price,item_name",
+                "or /add price,qty,item_name",
+                "",
+                "Batch format: /add",
+                "price,item_name",
+                "price,qty,item_name",
+            ]
+            await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
+            return
+        
+        # Collect items to add
+        items_to_add = []
+        
+        if is_inline:
+            # Inline format: parse single line
+            logger.info(f"[User {user_id}] /add inline format detected")
+            if inline_content:
+                items_to_add.append(inline_content)
+        
+        if is_batch:
+            # Batch format: parse following lines
+            logger.info(f"[User {user_id}] /add batch format detected ({len(lines)-1} lines)")
+            for line in lines[1:]:
+                line = line.strip()
+                if line:
+                    items_to_add.append(line)
+        
+        if not items_to_add:
+            logger.warning(f"[User {user_id}] /add no items after parsing")
+            await update.message.reply_text(append_help_hint("No items to add."))
+            return
+        
+        # Process each item (delegate to parsing function)
         service = context.bot_data["service"]
-        total = service.add_item(purchase_id, name, quantity, unit_price)
-
-        logger.info(f"[User {user_id}] Item '{name}' x{quantity} added to purchase {purchase_id}")
-
-        text = "Item added.\n\nTotal: " + format_currency(total) + "\n\nUse /list to see all items."
-        await update.message.reply_text(append_help_hint(text))
+        
+        successful_adds = 0
+        errors = []
+        
+        for item_line in items_to_add:
+            try:
+                name, quantity, unit_price = parse_add_item_input(item_line)
+                total = service.add_item(purchase_id, name, quantity, unit_price)
+                successful_adds += 1
+                logger.info(f"[User {user_id}] Item '{name}' x{quantity} added to purchase {purchase_id}")
+            except ValueError as e:
+                logger.warning(f"[User {user_id}] /add parse error: {e}")
+                errors.append(f"• {item_line}: {str(e)}")
+        
+        # Build response
+        response_lines = []
+        if successful_adds > 0:
+            response_lines.append(f"✓ {successful_adds} item(s) added.")
+            total = service.get_purchase(purchase_id)["total"]
+            response_lines.append(f"\nTotal: {format_currency(total)}")
+            response_lines.append("\nUse /list to see all items.")
+        
+        if errors:
+            response_lines.append("\n⚠ Errors:")
+            response_lines.extend(errors)
+            response_lines.append("\nFormat: price,item OR price,qty,item")
+        
+        if not successful_adds and errors:
+            # All items failed
+            msg_lines = [
+                "Could not add items. Check format:",
+                "",
+                "Inline: /add price,item",
+                "or /add price,qty,item",
+                "",
+                "Errors:"
+            ]
+            msg_lines.extend(errors)
+            await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
+            return
+        
+        await update.message.reply_text(append_help_hint("\n".join(response_lines)))
 
     except NotFoundError as e:
         logger.warning("[User %s] /add NotFoundError: %s", update.effective_user.id, e)

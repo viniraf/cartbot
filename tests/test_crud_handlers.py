@@ -10,6 +10,7 @@ from telegram.ext import ContextTypes
 from app.handlers.handlers import (
     start_handler,
     add_item_handler,
+    store_input_handler,
     view_total_handler,
     list_items_handler,
     edit_item_handler,
@@ -54,14 +55,23 @@ def mock_update():
     return update
 
 
+# Helper to setup active purchase with store (Phase 9.8)
+async def setup_active_purchase(mock_update, mock_context, store_name="TestStore"):
+    """Create an active purchase with store name."""
+    mock_update.message.text = "/start"
+    await start_handler(mock_update, mock_context)
+    mock_update.message.text = store_name
+    await store_input_handler(mock_update, mock_context)
+
+
 class TestViewTotalHandler:
     """Test /total handler."""
 
     @pytest.mark.asyncio
     async def test_view_total_shows_total_and_count(self, mock_update, mock_context):
         """view_total_handler should display total and item count."""
-        await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add milk 2 1.50"
+        await setup_active_purchase(mock_update, mock_context)
+        mock_update.message.text = "/add 1.50,2,milk"
         await add_item_handler(mock_update, mock_context)
 
         mock_update.message.text = "/total"
@@ -77,7 +87,7 @@ class TestViewTotalHandler:
     @pytest.mark.asyncio
     async def test_view_total_empty_purchase(self, mock_update, mock_context):
         """view_total with no items should show 0."""
-        await start_handler(mock_update, mock_context)
+        await setup_active_purchase(mock_update, mock_context)
 
         mock_update.message.text = "/total"
         await view_total_handler(mock_update, mock_context)
@@ -104,10 +114,10 @@ class TestListItemsHandler:
     @pytest.mark.asyncio
     async def test_list_items_shows_all_items(self, mock_update, mock_context):
         """list_items_handler should show formatted items with 1-based indices."""
-        await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add milk 2 1.50"
+        await setup_active_purchase(mock_update, mock_context)
+        mock_update.message.text = "/add 1.50,2,milk"
         await add_item_handler(mock_update, mock_context)
-        mock_update.message.text = "/add bread 1 2.00"
+        mock_update.message.text = "/add 2.00,bread"
         await add_item_handler(mock_update, mock_context)
 
         mock_update.message.text = "/list"
@@ -126,7 +136,7 @@ class TestListItemsHandler:
     @pytest.mark.asyncio
     async def test_list_items_empty_shows_no_items(self, mock_update, mock_context):
         """list_items with no items should show 'No items yet'."""
-        await start_handler(mock_update, mock_context)
+        await setup_active_purchase(mock_update, mock_context)
 
         mock_update.message.text = "/list"
         await list_items_handler(mock_update, mock_context)
@@ -150,10 +160,10 @@ class TestDeleteItemHandler:
     @pytest.mark.asyncio
     async def test_delete_item_removes_and_updates_total(self, mock_update, mock_context):
         """delete_item_handler should remove item and show new total."""
-        await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add milk 2 1.50"
+        await setup_active_purchase(mock_update, mock_context)
+        mock_update.message.text = "/add 1.50,2,milk"
         await add_item_handler(mock_update, mock_context)
-        mock_update.message.text = "/add bread 1 2.00"
+        mock_update.message.text = "/add 2.00,bread"
         await add_item_handler(mock_update, mock_context)
 
         mock_update.message.text = "/delete 2"
@@ -167,8 +177,8 @@ class TestDeleteItemHandler:
     @pytest.mark.asyncio
     async def test_delete_item_first_item(self, mock_update, mock_context):
         """delete_item 1 should remove first item."""
-        await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add milk 1 1.50"
+        await setup_active_purchase(mock_update, mock_context)
+        mock_update.message.text = "/add 1.50,milk"
         await add_item_handler(mock_update, mock_context)
 
         mock_update.message.text = "/delete 1"
@@ -182,7 +192,7 @@ class TestDeleteItemHandler:
     @pytest.mark.asyncio
     async def test_delete_item_no_args_shows_usage(self, mock_update, mock_context):
         """delete_item with no args should show usage."""
-        await start_handler(mock_update, mock_context)
+        await setup_active_purchase(mock_update, mock_context)
         mock_update.message.text = "/delete"
 
         await delete_item_handler(mock_update, mock_context)
@@ -207,8 +217,8 @@ class TestEditItemHandler:
     @pytest.mark.asyncio
     async def test_edit_item_updates_and_shows_total(self, mock_update, mock_context):
         """edit_item_handler should update item and show new total."""
-        await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add milk 2 1.50"
+        await setup_active_purchase(mock_update, mock_context)
+        mock_update.message.text = "/add 1.50,2,milk"
         await add_item_handler(mock_update, mock_context)
 
         mock_update.message.text = "/edit 1 3 2.00"
@@ -222,8 +232,8 @@ class TestEditItemHandler:
     @pytest.mark.asyncio
     async def test_edit_item_list_shows_updated(self, mock_update, mock_context):
         """After edit, list_items should show updated values."""
-        await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add milk 1 1.50"
+        await setup_active_purchase(mock_update, mock_context)
+        mock_update.message.text = "/add 1.50,milk"
         await add_item_handler(mock_update, mock_context)
 
         mock_update.message.text = "/edit 1 5 2.00"
@@ -242,7 +252,7 @@ class TestEditItemHandler:
     @pytest.mark.asyncio
     async def test_edit_item_no_args_shows_usage(self, mock_update, mock_context):
         """edit_item with insufficient args should show usage."""
-        await start_handler(mock_update, mock_context)
+        await setup_active_purchase(mock_update, mock_context)
         mock_update.message.text = "/edit"
 
         await edit_item_handler(mock_update, mock_context)
@@ -267,8 +277,8 @@ class TestFinishHandler:
     @pytest.mark.asyncio
     async def test_finish_shows_summary_and_clears_state(self, mock_update, mock_context):
         """finish_handler should show summary, clear purchase_id, and prompt for /start."""
-        await start_handler(mock_update, mock_context)
-        mock_update.message.text = "/add milk 2 1.50"
+        await setup_active_purchase(mock_update, mock_context)
+        mock_update.message.text = "/add 1.50,2,milk"
         await add_item_handler(mock_update, mock_context)
 
         mock_update.message.text = "/finish"
@@ -288,7 +298,7 @@ class TestFinishHandler:
     @pytest.mark.asyncio
     async def test_finish_resets_for_new_purchase(self, mock_update, mock_context):
         """After /finish, /start should create fresh purchase with new ID."""
-        await start_handler(mock_update, mock_context)
+        await setup_active_purchase(mock_update, mock_context)
         purchase_id_1 = mock_context.user_data["purchase_id"]
         mock_update.message.text = "/finish"
         await finish_handler(mock_update, mock_context)
@@ -296,6 +306,8 @@ class TestFinishHandler:
         # Reset message.text for /start call
         mock_update.message.text = "/start"
         await start_handler(mock_update, mock_context)
+        mock_update.message.text = "NewStore"
+        await store_input_handler(mock_update, mock_context)
         purchase_id_2 = mock_context.user_data["purchase_id"]
 
         assert purchase_id_1 != purchase_id_2
@@ -303,7 +315,7 @@ class TestFinishHandler:
     @pytest.mark.asyncio
     async def test_finish_empty_purchase(self, mock_update, mock_context):
         """finish_handler should work with empty purchase (0 items, $0 total)."""
-        await start_handler(mock_update, mock_context)
+        await setup_active_purchase(mock_update, mock_context)
 
         mock_update.message.text = "/finish"
         await finish_handler(mock_update, mock_context)
