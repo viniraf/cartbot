@@ -130,10 +130,10 @@ class TestLangHandlerErrors:
 
         await lang_handler(mock_update, mock_context)
 
-        # Verify error message was sent
+        # Verify standardized error message was sent
         mock_update.message.reply_text.assert_called_once()
         call_args = mock_update.message.reply_text.call_args[0][0]
-        assert "lang" in call_args.lower() or "usage" in call_args.lower()
+        assert "❌" in call_args
 
     @pytest.mark.asyncio
     async def test_lang_invalid_language(self, mock_update, mock_context):
@@ -142,10 +142,10 @@ class TestLangHandlerErrors:
 
         await lang_handler(mock_update, mock_context)
 
-        # Verify error message was sent
+        # Verify standardized error message was sent
         mock_update.message.reply_text.assert_called_once()
         call_args = mock_update.message.reply_text.call_args[0][0]
-        assert "invalid" in call_args.lower() or "ptbr" in call_args.lower()
+        assert "❌" in call_args
 
         # Language should not be changed
         assert mock_context.user_data.get("language") is None

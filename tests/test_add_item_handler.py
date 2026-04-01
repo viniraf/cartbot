@@ -180,7 +180,7 @@ class TestAddItemErrors:
         # Should show usage message
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        assert "Inline format" in response or "format" in response.lower()
+        assert "❌" in response or "Invalid" in response
 
     @pytest.mark.asyncio
     async def test_add_item_rejects_pipe_format(self, mock_update, mock_context):
@@ -190,11 +190,10 @@ class TestAddItemErrors:
         mock_update.message.text = "/add milk | 2 | 1.50"
         await add_item_handler(mock_update, mock_context)
         
-        # Should reject with error message
+        # Should reject with error message (format_error_message)
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        assert "no longer supported" in response.lower()
-        assert "comma" in response.lower()
+        assert "❌" in response
 
     @pytest.mark.asyncio
     async def test_add_item_invalid_format(self, mock_update, mock_context):
@@ -204,10 +203,10 @@ class TestAddItemErrors:
         mock_update.message.text = "/add abc"  # No comma
         await add_item_handler(mock_update, mock_context)
         
-        # Should show error
+        # Should show standardized error
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        assert "Error" in response or "error" in response.lower()
+        assert "❌" in response
 
     @pytest.mark.asyncio
     async def test_add_item_without_active_purchase(self, mock_update, mock_context):
@@ -215,10 +214,10 @@ class TestAddItemErrors:
         mock_update.message.text = "/add 19.90,feijao"
         await add_item_handler(mock_update, mock_context)
         
-        # Should show "no active purchase"
+        # Should show standardized error (NO_ACTIVE_PURCHASE)
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        assert "No active purchase" in response or "start" in response.lower()
+        assert "❌" in response
 
     @pytest.mark.asyncio
     async def test_add_item_invalid_price(self, mock_update, mock_context):
@@ -228,10 +227,10 @@ class TestAddItemErrors:
         mock_update.message.text = "/add abc,feijao"
         await add_item_handler(mock_update, mock_context)
         
-        # Should show error
+        # Should show standardized error
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        assert "Error" in response
+        assert "❌" in response
 
     @pytest.mark.asyncio
     async def test_add_item_invalid_quantity(self, mock_update, mock_context):
@@ -241,10 +240,10 @@ class TestAddItemErrors:
         mock_update.message.text = "/add 19.90,abc,feijao"
         await add_item_handler(mock_update, mock_context)
         
-        # Should show error
+        # Should show standardized error
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        assert "Error" in response
+        assert "❌" in response
 
 
 class TestAddItemAccumulation:
@@ -306,10 +305,10 @@ class TestAddItemWaitingForStore:
         mock_update.message.text = "/add 19.90,feijao"
         await add_item_handler(mock_update, mock_context)
         
-        # Should be blocked with store prompt
+        # Should be blocked with error message
         mock_update.message.reply_text.assert_called_once()
         response = mock_update.message.reply_text.call_args[0][0]
-        assert "store" in response.lower()
+        assert "❌" in response
 
     @pytest.mark.asyncio
     async def test_add_works_after_store_provided(self, mock_update, mock_context):

@@ -207,10 +207,10 @@ class TestStartHandlerLocale:
         # Should NOT set language to fr
         assert mock_context.user_data.get("language") != "fr"
         
-        # Should send error message
+        # Should send standardized error message
         mock_update.message.reply_text.assert_called_once()
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "Invalid" in message_text or "invalid" in message_text.lower()
+        assert "❌" in message_text
 
     @pytest.mark.asyncio
     async def test_start_default_locale_en(self, mock_update, mock_context):

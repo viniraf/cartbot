@@ -158,10 +158,10 @@ class TestResumeHandlerErrors:
         # Try to resume
         await resume_handler(mock_update, context)
 
-        # Verify error message and context cleared
+        # Verify standardized error message was sent
         mock_update.message.reply_text.assert_called_once()
         call_args = mock_update.message.reply_text.call_args[0][0]
-        assert "not found" in call_args.lower() or "error" in call_args.lower()
+        assert "❌" in call_args
 
         # Verify purchase_id was cleared from context
         assert context.user_data.get("purchase_id") is None

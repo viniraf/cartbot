@@ -123,7 +123,53 @@ MESSAGES = {
     "STORE_INVALID": "O nome do estabelecimento não pode estar vazio. Tente novamente.",
     "STORE_CREATED": "Estabelecimento: {store_name}",
 
-    # General/errors
+    # Phase 9.13 - Unified error message structure
+    # All errors follow format: TITLE, EXPLANATION, EXAMPLE, FOOTER
+
+    # No active purchase
+    "ERROR_NO_ACTIVE_PURCHASE_TITLE": "❌ Nenhuma Compra Ativa",
+    "ERROR_NO_ACTIVE_PURCHASE_EXPLANATION": "Você precisa iniciar uma compra primeiro.",
+    "ERROR_NO_ACTIVE_PURCHASE_EXAMPLE": "Uso correto: /start",
+
+    # Invalid /add format
+    "ERROR_INVALID_ADD_FORMAT_TITLE": "❌ Formato /add Inválido",
+    "ERROR_INVALID_ADD_FORMAT_EXPLANATION": "Os itens devem incluir preço e nome.",
+    "ERROR_INVALID_ADD_FORMAT_EXAMPLE": "Formato correto: /add 19.90,item ou /add 19.90,2,item",
+
+    # Invalid delete index
+    "ERROR_INVALID_DELETE_INDEX_TITLE": "❌ Índice de Item Inválido",
+    "ERROR_INVALID_DELETE_INDEX_EXPLANATION": "O índice deve ser um número maior que 0.",
+    "ERROR_INVALID_DELETE_INDEX_EXAMPLE": "Formato correto: /delete 1",
+
+    # Invalid edit input
+    "ERROR_INVALID_EDIT_INPUT_TITLE": "❌ Formato /edit Inválido",
+    "ERROR_INVALID_EDIT_INPUT_EXPLANATION": "Índice e quantidade devem ser números inteiros, preço deve ser um decimal.",
+    "ERROR_INVALID_EDIT_INPUT_EXAMPLE": "Formato correto: /edit 1 2 3,50",
+
+    # Invalid language
+    "ERROR_INVALID_LANG_TITLE": "❌ Idioma Inválido",
+    "ERROR_INVALID_LANG_EXPLANATION": "Os idiomas suportados são Inglês (en) e Português (ptbr).",
+    "ERROR_INVALID_LANG_EXAMPLE": "Formato correto: /lang en ou /lang ptbr",
+
+    # Invalid locale at /start
+    "ERROR_INVALID_LOCALE_TITLE": "❌ Localidade Inválida",
+    "ERROR_INVALID_LOCALE_EXPLANATION": "As localidades suportadas são Inglês (en) e Português (ptbr).",
+    "ERROR_INVALID_LOCALE_EXAMPLE": "Formato correto: /start en ou /start ptbr",
+
+    # Empty store name
+    "ERROR_STORE_EMPTY_TITLE": "❌ Nome do Estabelecimento Vazio",
+    "ERROR_STORE_EMPTY_EXPLANATION": "O nome do estabelecimento não pode estar vazio.",
+    "ERROR_STORE_EMPTY_EXAMPLE": "Por favor, forneça um nome de estabelecimento.",
+
+    # Generic error
+    "ERROR_GENERIC_TITLE": "❌ Ocorreu um Erro",
+    "ERROR_GENERIC_EXPLANATION": "Algo inesperado aconteceu.",
+    "ERROR_GENERIC_EXAMPLE": "Por favor, tente novamente mais tarde.",
+
+    # Error help footer
+    "ERROR_HELP_FOOTER": "Digite /help para mais informações.",
+
+    # General/errors (kept for backward compatibility)
     "ERROR_GENERIC": "Ocorreu um erro. Tente novamente mais tarde.",
     "HELP_HINT": "Precisa de ajuda? Use /help",
 }

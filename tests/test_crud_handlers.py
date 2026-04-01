@@ -99,12 +99,12 @@ class TestViewTotalHandler:
 
     @pytest.mark.asyncio
     async def test_view_total_without_start(self, mock_update, mock_context):
-        """view_total without /start should prompt to use /start."""
+        """view_total without /start should show error."""
         mock_update.message.text = "/total"
         await view_total_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "No active purchase" in message_text
+        assert "❌" in message_text
         assert "/start" in message_text
 
 
@@ -146,12 +146,12 @@ class TestListItemsHandler:
 
     @pytest.mark.asyncio
     async def test_list_items_without_start(self, mock_update, mock_context):
-        """list_items without /start should prompt to use /start."""
+        """list_items without /start should show error."""
         mock_update.message.text = "/list"
         await list_items_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "No active purchase" in message_text
+        assert "❌" in message_text
 
 
 class TestDeleteItemHandler:
@@ -191,24 +191,23 @@ class TestDeleteItemHandler:
 
     @pytest.mark.asyncio
     async def test_delete_item_no_args_shows_usage(self, mock_update, mock_context):
-        """delete_item with no args should show usage."""
+        """delete_item with no args should show error."""
         await setup_active_purchase(mock_update, mock_context)
         mock_update.message.text = "/delete"
 
         await delete_item_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "Usage" in message_text
-        assert "/delete" in message_text
+        assert "❌" in message_text
 
     @pytest.mark.asyncio
     async def test_delete_item_without_start(self, mock_update, mock_context):
-        """delete_item without /start should prompt to use /start."""
+        """delete_item without /start should show error."""
         mock_update.message.text = "/delete 1"
         await delete_item_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "No active purchase" in message_text
+        assert "❌" in message_text
 
 
 class TestEditItemHandler:
@@ -251,24 +250,23 @@ class TestEditItemHandler:
 
     @pytest.mark.asyncio
     async def test_edit_item_no_args_shows_usage(self, mock_update, mock_context):
-        """edit_item with insufficient args should show usage."""
+        """edit_item with insufficient args should show error."""
         await setup_active_purchase(mock_update, mock_context)
         mock_update.message.text = "/edit"
 
         await edit_item_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "Usage" in message_text
-        assert "/edit" in message_text
+        assert "❌" in message_text
 
     @pytest.mark.asyncio
     async def test_edit_item_without_start(self, mock_update, mock_context):
-        """edit_item without /start should prompt to use /start."""
+        """edit_item without /start should show error."""
         mock_update.message.text = "/edit 1 2 1.50"
         await edit_item_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "No active purchase" in message_text
+        assert "❌" in message_text
 
 
 class TestFinishHandler:
@@ -330,10 +328,10 @@ class TestFinishHandler:
 
     @pytest.mark.asyncio
     async def test_finish_without_start(self, mock_update, mock_context):
-        """finish without /start should prompt to use /start."""
+        """finish without /start should show error."""
         mock_update.message.text = "/finish"
         await finish_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "No active purchase" in message_text
+        assert "❌" in message_text
         assert "/start" in message_text

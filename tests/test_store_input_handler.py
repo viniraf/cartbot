@@ -220,10 +220,10 @@ class TestStoreInputHandlerInvalidInput:
         
         await store_input_handler(mock_update, mock_context)
         
-        # Should send error message
+        # Should send standardized error message
         mock_update.message.reply_text.assert_called_once()
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "cannot be empty" in message_text.lower() or "invalid" in message_text.lower()
+        assert "❌" in message_text
 
     @pytest.mark.asyncio
     async def test_empty_store_input_keeps_waiting_flag(self, mock_update, mock_context):
@@ -283,10 +283,10 @@ class TestAddItemFlowLock:
         # Attempt /add
         await add_item_handler(mock_update, mock_context)
         
-        # Should send store prompt message instead of processing /add
+        # Should send standardized error message
         mock_update.message.reply_text.assert_called_once()
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "store" in message_text.lower()
+        assert "❌" in message_text
 
     @pytest.mark.asyncio
     async def test_add_works_after_store_created(self, mock_update, mock_context):

@@ -123,7 +123,53 @@ MESSAGES = {
     "STORE_INVALID": "Store name cannot be empty. Please try again.",
     "STORE_CREATED": "Store: {store_name}",
 
-    # General/errors
+    # Phase 9.13 - Unified error message structure
+    # All errors follow format: TITLE, EXPLANATION, EXAMPLE, FOOTER
+
+    # No active purchase
+    "ERROR_NO_ACTIVE_PURCHASE_TITLE": "❌ No Active Purchase",
+    "ERROR_NO_ACTIVE_PURCHASE_EXPLANATION": "You need to start a purchase first.",
+    "ERROR_NO_ACTIVE_PURCHASE_EXAMPLE": "Correct use: /start",
+
+    # Invalid /add format
+    "ERROR_INVALID_ADD_FORMAT_TITLE": "❌ Invalid /add Format",
+    "ERROR_INVALID_ADD_FORMAT_EXPLANATION": "Items must include price and name.",
+    "ERROR_INVALID_ADD_FORMAT_EXAMPLE": "Correct format: /add 19.90,item or /add 19.90,2,item",
+
+    # Invalid delete index
+    "ERROR_INVALID_DELETE_INDEX_TITLE": "❌ Invalid Item Index",
+    "ERROR_INVALID_DELETE_INDEX_EXPLANATION": "Index must be a number greater than 0.",
+    "ERROR_INVALID_DELETE_INDEX_EXAMPLE": "Correct format: /delete 1",
+
+    # Invalid edit input
+    "ERROR_INVALID_EDIT_INPUT_TITLE": "❌ Invalid Edit Format",
+    "ERROR_INVALID_EDIT_INPUT_EXPLANATION": "Index and quantity must be whole numbers, price must be a decimal.",
+    "ERROR_INVALID_EDIT_INPUT_EXAMPLE": "Correct format: /edit 1 2 3.50",
+
+    # Invalid language
+    "ERROR_INVALID_LANG_TITLE": "❌ Invalid Language",
+    "ERROR_INVALID_LANG_EXPLANATION": "Supported languages are English (en) and Portuguese (ptbr).",
+    "ERROR_INVALID_LANG_EXAMPLE": "Correct format: /lang en or /lang ptbr",
+
+    # Invalid locale at /start
+    "ERROR_INVALID_LOCALE_TITLE": "❌ Invalid Locale",
+    "ERROR_INVALID_LOCALE_EXPLANATION": "Supported locales are English (en) and Portuguese (ptbr).",
+    "ERROR_INVALID_LOCALE_EXAMPLE": "Correct format: /start en or /start ptbr",
+
+    # Empty store name
+    "ERROR_STORE_EMPTY_TITLE": "❌ Empty Store Name",
+    "ERROR_STORE_EMPTY_EXPLANATION": "Store name cannot be empty.",
+    "ERROR_STORE_EMPTY_EXAMPLE": "Please provide a store name.",
+
+    # Generic error
+    "ERROR_GENERIC_TITLE": "❌ An Error Occurred",
+    "ERROR_GENERIC_EXPLANATION": "Something unexpected happened.",
+    "ERROR_GENERIC_EXAMPLE": "Please try again later.",
+
+    # Error help footer
+    "ERROR_HELP_FOOTER": "Type /help for more information.",
+
+    # General/errors (kept for backward compatibility)
     "ERROR_GENERIC": "An error occurred. Please try again later.",
     "HELP_HINT": "Need help? Use /help",
 }

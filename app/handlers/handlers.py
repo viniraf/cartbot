@@ -27,18 +27,39 @@ from app.common.messages import format_message, set_language, get_language
 
 logger = logging.getLogger(__name__)
 
-# User-facing messages (Phase 7.3 - UX consistency)
-MSG_NO_ACTIVE_PURCHASE = "No active purchase. Use /start to begin."
-MSG_ERROR_GENERIC = "An error occurred. Please try again later."
-MSG_ADD_ITEM_USAGE = "Usage: /add [name] [quantity] [unit_price]\nExample: /add milk 2 1.50"
-MSG_DELETE_ITEM_USAGE = "Usage: /delete [index]\nExample: /delete 1"
-MSG_EDIT_ITEM_USAGE = "Usage: /edit [index] [new_quantity] [new_price]\nExample: /edit 1 3 2.00"
+
+def format_error_message(context, error_type: str) -> str:
+    """Format a standardized error message with title, explanation, example, and help footer.
+
+    Error structure (Phase 9.13):
+    ❌ Title
+    
+    Explanation.
+    
+    Correct format: /command example
+    
+    Type /help for more information.
+
+    Args:
+        context: Handler context with user language preference
+        error_type: Error type (e.g., "NO_ACTIVE_PURCHASE", "INVALID_ADD_FORMAT")
+
+    Returns:
+        Formatted multi-line error message
+    """
+    title = format_message(context, f"ERROR_{error_type}_TITLE")
+    explanation = format_message(context, f"ERROR_{error_type}_EXPLANATION")
+    example = format_message(context, f"ERROR_{error_type}_EXAMPLE")
+    footer = format_message(context, "ERROR_HELP_FOOTER")
+    
+    return f"{title}\n\n{explanation}\n\n{example}\n\n{footer}"
+
 
 
 def safe_handler(func):
     """Decorator that catches unhandled exceptions and sends user-friendly message.
 
-    Logs exception at ERROR level with traceback. Sends generic error message to user.
+    Logs exception at ERROR level with traceback. Sends standardized error message to user.
     Handlers should catch NotFoundError and ValidationError for specific messages.
     """
 
@@ -57,8 +78,8 @@ def safe_handler(func):
             )
             try:
                 if update and update.message:
-                    error_msg = MSG_ERROR_GENERIC
-                    await update.message.reply_text(append_help_hint(error_msg))
+                    error_msg = format_error_message(context, "GENERIC")
+                    await update.message.reply_text(error_msg)
             except Exception as send_err:
                 logger.error("Failed to send error message to user: %s", send_err)
 
@@ -129,9 +150,9 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         if param:
             # Validate locale
             if param not in ["en", "ptbr"]:
-                error_msg = "Error: Invalid locale. Supported: en, ptbr"
+                error_msg = format_error_message(context, "INVALID_LOCALE")
                 logger.warning("[User %s] Invalid locale param: %s", user_id, param)
-                await update.message.reply_text(append_help_hint(error_msg))
+                await update.message.reply_text(error_msg)
                 return
             
             locale = param
@@ -209,14 +230,15 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         # Check if waiting for store input (flow lock - must define store first)
         if context.user_data.get("waiting_for_store_input"):
             logger.info(f"[User {user_id}] /add blocked: waiting for store input")
-            store_prompt = format_message(context, "STORE_PROMPT")
-            await update.message.reply_text(append_help_hint(store_prompt))
+            error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+            await update.message.reply_text(error_msg)
             return
 
         # Check for active purchase
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
+            error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+            await update.message.reply_text(error_msg)
             return
 
         text = (update.message.text or "").strip()
@@ -224,21 +246,8 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         # Reject pipe-based format (old format)
         if "|" in text:
             logger.warning("[User %s] /add pipe format rejected (old format)", user_id)
-            msg_lines = [
-                "Pipe format (|) is no longer supported.",
-                "",
-                "Use comma-based format instead:",
-                "",
-                "Inline:",
-                "/add 19.90,feijao",
-                "/add 19.90,3,feijao",
-                "",
-                "Batch:",
-                "/add",
-                "19.90,feijao",
-                "20.50,2,file de frango",
-            ]
-            await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
+            error_msg = format_error_message(context, "INVALID_ADD_FORMAT")
+            await update.message.reply_text(error_msg)
             return
         
         # Parse input using dedicated parser (validates all items before returning)
@@ -246,20 +255,8 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             parsed_items = parse_add_input(text)
         except ValueError as e:
             logger.warning(f"[User {user_id}] /add parse error: {e}")
-            msg_lines = [
-                f"❌ Invalid format",
-                "",
-                str(e),
-                "",
-                "Correct format:",
-                "Inline: /add price,item",
-                "or: /add price,qty,item",
-                "",
-                "Batch: /add",
-                "price,item",
-                "price,qty,item",
-            ]
-            await update.message.reply_text(append_help_hint(format_command_block(msg_lines)))
+            error_msg = format_error_message(context, "INVALID_ADD_FORMAT")
+            await update.message.reply_text(error_msg)
             return
         
         # Process items (all validated at this point)
@@ -303,10 +300,12 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     except NotFoundError as e:
         logger.warning("[User %s] /add NotFoundError: %s", update.effective_user.id, e)
-        await update.message.reply_text(append_help_hint(f"Error: {e}"))
+        error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+        await update.message.reply_text(error_msg)
     except ValidationError as e:
         logger.warning("[User %s] /add ValidationError: %s", update.effective_user.id, e)
-        await update.message.reply_text(append_help_hint(f"Error: {e}"))
+        error_msg = format_error_message(context, "INVALID_ADD_FORMAT")
+        await update.message.reply_text(error_msg)
 
 
 @safe_handler
@@ -318,7 +317,8 @@ async def view_total_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
+            error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+            await update.message.reply_text(error_msg)
             return
 
         service = context.bot_data["service"]
@@ -332,7 +332,8 @@ async def view_total_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     except NotFoundError as e:
         logger.warning("[User %s] /total NotFoundError: %s", update.effective_user.id, e)
-        await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
+        error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+        await update.message.reply_text(error_msg)
 
 
 @safe_handler
@@ -344,7 +345,8 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
+            error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+            await update.message.reply_text(error_msg)
             return
 
         service = context.bot_data["service"]
@@ -377,7 +379,8 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     except NotFoundError as e:
         logger.warning("[User %s] /list NotFoundError: %s", update.effective_user.id, e)
-        await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
+        error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+        await update.message.reply_text(error_msg)
 
 
 @safe_handler
@@ -389,7 +392,8 @@ async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
+            error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+            await update.message.reply_text(error_msg)
             return
 
         text = (update.message.text or "").strip()
@@ -397,18 +401,21 @@ async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         if len(args) < 1:
             logger.warning("[User %s] /delete missing args", user_id)
-            await update.message.reply_text(MSG_DELETE_ITEM_USAGE)
+            error_msg = format_error_message(context, "INVALID_DELETE_INDEX")
+            await update.message.reply_text(error_msg)
             return
 
         try:
             user_index = int(args[0])
         except ValueError:
             logger.warning("[User %s] /delete invalid index: %s", user_id, args)
-            await update.message.reply_text(append_help_hint("Invalid index. Use a number.\n\n" + MSG_DELETE_ITEM_USAGE))
+            error_msg = format_error_message(context, "INVALID_DELETE_INDEX")
+            await update.message.reply_text(error_msg)
             return
 
         if user_index < 1:
-            await update.message.reply_text(append_help_hint("Index must be 1 or greater.\n\n" + MSG_DELETE_ITEM_USAGE))
+            error_msg = format_error_message(context, "INVALID_DELETE_INDEX")
+            await update.message.reply_text(error_msg)
             return
 
         # Convert 1-based (user) to 0-based (internal)
@@ -423,7 +430,8 @@ async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     except NotFoundError as e:
         logger.warning("[User %s] /delete NotFoundError: %s", update.effective_user.id, e)
-        await update.message.reply_text(append_help_hint(f"Error: {e}"))
+        error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+        await update.message.reply_text(error_msg)
 
 
 @safe_handler
@@ -435,7 +443,8 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
+            error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+            await update.message.reply_text(error_msg)
             return
 
         text = (update.message.text or "").strip()
@@ -443,7 +452,8 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         if len(args) < 3:
             logger.warning("[User %s] /edit invalid args: %s", user_id, args)
-            await update.message.reply_text(MSG_EDIT_ITEM_USAGE)
+            error_msg = format_error_message(context, "INVALID_EDIT_INPUT")
+            await update.message.reply_text(error_msg)
             return
 
         try:
@@ -452,13 +462,13 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             unit_price = float(args[2])
         except (ValueError, IndexError):
             logger.warning("[User %s] /edit invalid input: %s", user_id, args)
-            await update.message.reply_text(
-                "Invalid input. Index and quantity must be whole numbers, price a number.\n" + MSG_EDIT_ITEM_USAGE
-            )
+            error_msg = format_error_message(context, "INVALID_EDIT_INPUT")
+            await update.message.reply_text(error_msg)
             return
 
         if user_index < 1:
-            await update.message.reply_text(append_help_hint("Index must be 1 or greater.\n\n" + MSG_EDIT_ITEM_USAGE))
+            error_msg = format_error_message(context, "INVALID_EDIT_INPUT")
+            await update.message.reply_text(error_msg)
             return
 
         item_index = user_index - 1
@@ -472,10 +482,12 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     except NotFoundError as e:
         logger.warning("[User %s] /edit NotFoundError: %s", update.effective_user.id, e)
-        await update.message.reply_text(append_help_hint(f"Error: {e}"))
+        error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+        await update.message.reply_text(error_msg)
     except ValidationError as e:
         logger.warning("[User %s] /edit ValidationError: %s", update.effective_user.id, e)
-        await update.message.reply_text(append_help_hint(f"Error: {e}"))
+        error_msg = format_error_message(context, "INVALID_EDIT_INPUT")
+        await update.message.reply_text(error_msg)
 
 
 @safe_handler
@@ -487,7 +499,8 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
+            error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+            await update.message.reply_text(error_msg)
             return
 
         service = context.bot_data["service"]
@@ -514,7 +527,8 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     except NotFoundError as e:
         logger.warning("[User %s] /finish NotFoundError: %s", update.effective_user.id, e)
-        await update.message.reply_text(MSG_NO_ACTIVE_PURCHASE)
+        error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+        await update.message.reply_text(error_msg)
 
 
 @safe_handler
@@ -543,7 +557,8 @@ async def resume_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(append_help_hint(MSG_NO_ACTIVE_PURCHASE))
+            error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+            await update.message.reply_text(error_msg)
             return
 
         service = context.bot_data["service"]
@@ -553,7 +568,8 @@ async def resume_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         except NotFoundError:
             logger.warning("[User %s] /resume Purchase %s not found", user_id, purchase_id)
             context.user_data.pop("purchase_id", None)
-            await update.message.reply_text(append_help_hint("Purchase not found."))
+            error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+            await update.message.reply_text(error_msg)
             return
 
         if purchase is None:
@@ -590,7 +606,8 @@ async def resume_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     except Exception as e:
         logger.exception("[User %s] /continue error: %s", update.effective_user.id, e)
-        await update.message.reply_text(append_help_hint(MSG_ERROR_GENERIC))
+        error_msg = format_error_message(context, "GENERIC")
+        await update.message.reply_text(error_msg)
 
 
 @safe_handler
@@ -619,7 +636,8 @@ async def new_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
         purchase_id = context.user_data.get("purchase_id")
         if purchase_id is None:
-            await update.message.reply_text(append_help_hint(MSG_NO_ACTIVE_PURCHASE))
+            error_msg = format_error_message(context, "NO_ACTIVE_PURCHASE")
+            await update.message.reply_text(error_msg)
             return
 
         service = context.bot_data["service"]
@@ -656,7 +674,8 @@ async def new_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     except Exception as e:
         logger.exception("[User %s] /new error: %s", update.effective_user.id, e)
-        await update.message.reply_text(append_help_hint(MSG_ERROR_GENERIC))
+        error_msg = format_error_message(context, "GENERIC")
+        await update.message.reply_text(error_msg)
 
 
 @safe_handler
@@ -718,8 +737,8 @@ async def lang_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
         if len(args) < 1:
             logger.warning(f"[User {user_id}] /lang missing args")
-            msg = format_message(context, "LANG_USAGE")
-            await update.message.reply_text(append_help_hint(msg))
+            error_msg = format_error_message(context, "INVALID_LANG")
+            await update.message.reply_text(error_msg)
             return
 
         requested_language = args[0].lower()
@@ -737,13 +756,13 @@ async def lang_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             await update.message.reply_text(append_help_hint(msg))
         else:
             logger.warning(f"[User {user_id}] Invalid language: {requested_language}")
-            msg = format_message(context, "LANG_INVALID")
-            await update.message.reply_text(append_help_hint(msg))
+            error_msg = format_error_message(context, "INVALID_LANG")
+            await update.message.reply_text(error_msg)
 
     except Exception as e:
         logger.exception(f"[User {update.effective_user.id}] /lang error: {e}")
-        msg = format_message(context, "ERROR_GENERIC")
-        await update.message.reply_text(append_help_hint(msg))
+        error_msg = format_error_message(context, "GENERIC")
+        await update.message.reply_text(error_msg)
 
 
 @safe_handler
@@ -777,8 +796,8 @@ async def store_input_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         if not store_name:
             logger.info(f"[User {user_id}] Empty store name provided")
-            error_msg = format_message(context, "STORE_INVALID")
-            await update.message.reply_text(append_help_hint(error_msg))
+            error_msg = format_error_message(context, "STORE_EMPTY")
+            await update.message.reply_text(error_msg)
             return
 
         # Create purchase with store name
@@ -809,10 +828,10 @@ async def store_input_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         except (NotFoundError, ValidationError) as e:
             logger.error(f"[User {user_id}] Failed to create purchase: {e}")
-            error_msg = format_message(context, "ERROR_GENERIC")
-            await update.message.reply_text(append_help_hint(error_msg))
+            error_msg = format_error_message(context, "GENERIC")
+            await update.message.reply_text(error_msg)
 
     except Exception as e:
         logger.exception(f"[User {update.effective_user.id}] Store input error: {e}")
-        error_msg = format_message(context, "ERROR_GENERIC")
-        await update.message.reply_text(append_help_hint(error_msg))
+        error_msg = format_error_message(context, "GENERIC")
+        await update.message.reply_text(error_msg)
