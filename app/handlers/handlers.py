@@ -611,10 +611,13 @@ async def new_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
         # Clear old purchase and start new one
         context.user_data.pop("purchase_id", None)
-        new_purchase_id = service.start_purchase()
+        
+        # Preserve locale setting when creating new purchase
+        locale = get_language(context)
+        new_purchase_id = service.start_purchase(locale=locale)
         context.user_data["purchase_id"] = new_purchase_id
 
-        logger.info("[User %s] New purchase started with ID %s", user_id, new_purchase_id)
+        logger.info("[User %s] New purchase started with ID %s (locale: %s)", user_id, new_purchase_id, locale)
 
         # Announce new purchase
         msg = "Shopping list started."
