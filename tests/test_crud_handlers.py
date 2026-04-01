@@ -274,7 +274,7 @@ class TestFinishHandler:
 
     @pytest.mark.asyncio
     async def test_finish_shows_summary_and_clears_state(self, mock_update, mock_context):
-        """finish_handler should show summary, clear purchase_id, and prompt for /start."""
+        """finish_handler should show summary with store name, clear purchase_id, and prompt for /start."""
         await setup_active_purchase(mock_update, mock_context)
         mock_update.message.text = "/add 1.50,2,milk"
         await add_item_handler(mock_update, mock_context)
@@ -283,11 +283,11 @@ class TestFinishHandler:
         await finish_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "Purchase finished" in message_text
-        assert "Total" in message_text
+        assert "completed" in message_text.lower() or "finalizada" in message_text.lower()
+        assert "TestStore" in message_text  # Store name should be included
+        assert "items" in message_text.lower()  # "Total items" should be present
         assert "R$" in message_text
         assert "3.00" in message_text
-        assert "Items" in message_text
         assert "2" in message_text  # qty=2 for milk
         assert "/start" in message_text
 
@@ -312,17 +312,18 @@ class TestFinishHandler:
 
     @pytest.mark.asyncio
     async def test_finish_empty_purchase(self, mock_update, mock_context):
-        """finish_handler should work with empty purchase (0 items, $0 total)."""
+        """finish_handler should work with empty purchase (0 items, $0 total) and show store name."""
         await setup_active_purchase(mock_update, mock_context)
 
         mock_update.message.text = "/finish"
         await finish_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "Purchase finished" in message_text
+        assert "completed" in message_text.lower() or "finalizada" in message_text.lower()
+        assert "TestStore" in message_text  # Store name should be included
         assert "R$" in message_text
         assert "0.00" in message_text
-        assert "Items" in message_text
+        assert "items" in message_text.lower()  # "Total items" should be present
         assert "0" in message_text
         assert "purchase_id" not in mock_context.user_data
 

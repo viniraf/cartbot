@@ -492,7 +492,7 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 @safe_handler
 async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /finish command - complete purchase and show final summary."""
+    """Handle /finish command - complete purchase and show final summary with store name."""
     try:
         user_id = update.effective_user.id
         logger.info(f"[User {user_id}] /finish command received")
@@ -508,16 +508,25 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         total = result["total"]
         count = result["item_count"]
+        store_name = result.get("store_name", "Unknown")
 
-        logger.info("[User %s] Purchase %s finished (total=%.2f, items=%s)", user_id, purchase_id, total, count)
+        logger.info("[User %s] Purchase %s finished (store=%s, total=%.2f, items=%s)", user_id, purchase_id, store_name, total, count)
+
+        # Build response using localized messages with store name
+        title = format_message(context, "FINISH_TITLE")
+        store = format_message(context, "FINISH_STORE", store_name=store_name)
+        total_items = format_message(context, "FINISH_TOTAL_ITEMS", item_count=count)
+        total_amount = format_message(context, "FINISH_TOTAL_AMOUNT", total=format_currency(total))
+        next_action = format_message(context, "FINISH_NEW_PURCHASE")
 
         summary_lines = [
-            "Purchase finished.",
+            title,
             "",
-            f"Total: {format_currency(total)}",
-            f"Items: {count}",
+            store,
+            total_items,
+            total_amount,
             "",
-            "/start — begin a new purchase",
+            next_action,
         ]
         text = format_command_block(summary_lines)
         await update.message.reply_text(append_help_hint(text))

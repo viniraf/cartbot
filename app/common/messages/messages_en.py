@@ -89,10 +89,11 @@ MESSAGES = {
     "EDIT_ITEM_NO_PURCHASE": "No active purchase. Use /start to begin.",
     "EDIT_ITEM_NOT_FOUND": "Error: {error}",
 
-    # /finish command
-    "FINISH_TITLE": "Purchase finished.",
-    "FINISH_TOTAL": "Total: {total}",
-    "FINISH_ITEMS": "Items: {item_count}",
+    # /finish command (Phase 9.14 - store name in summary)
+    "FINISH_TITLE": "Purchase completed.",
+    "FINISH_STORE": "Store: {store_name}",
+    "FINISH_TOTAL_ITEMS": "Total items: {item_count}",
+    "FINISH_TOTAL_AMOUNT": "Final amount: {total}",
     "FINISH_NEW_PURCHASE": "/start - begin a new purchase",
     "FINISH_NO_PURCHASE": "No active purchase. Use /start to begin.",
 
