@@ -101,7 +101,7 @@ class TestAddItemInlineCommaFormat:
         # Verify item was added with correct quantity
         service = mock_context.bot_data["service"]
         purchase = service.get_purchase(purchase_id)
-        assert purchase["item_count"] == 1
+        assert purchase["item_count"] == 2  # qty=2 for file de frango
         assert purchase["total"] == 41.00  # 20.50 * 2
 
     @pytest.mark.asyncio
@@ -143,7 +143,7 @@ class TestAddItemBatchCommaFormat:
         # Verify all items were added
         service = mock_context.bot_data["service"]
         purchase = service.get_purchase(purchase_id)
-        assert purchase["item_count"] == 3
+        assert purchase["item_count"] == 4  # Sum of quantities: 1 + 2 + 1
         # Total: 19.90 + (20.50 * 2) + 5.30 = 66.20
         assert abs(purchase["total"] - 66.20) < 0.01
 
@@ -266,7 +266,7 @@ class TestAddItemAccumulation:
         
         # Verify both items
         purchase = service.get_purchase(purchase_id)
-        assert purchase["item_count"] == 2
+        assert purchase["item_count"] == 3  # Sum of quantities: 2 + 1
         assert abs(purchase["total"] - 25.00) < 0.01  # 10*2 + 5*1
 
     @pytest.mark.asyncio

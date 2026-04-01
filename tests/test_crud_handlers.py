@@ -82,7 +82,7 @@ class TestViewTotalHandler:
         assert "R$" in message_text
         assert "3.00" in message_text
         assert "Items" in message_text
-        assert "1" in message_text
+        assert "2" in message_text  # qty=2 for milk
 
     @pytest.mark.asyncio
     async def test_view_total_empty_purchase(self, mock_update, mock_context):
@@ -290,7 +290,7 @@ class TestFinishHandler:
         assert "R$" in message_text
         assert "3.00" in message_text
         assert "Items" in message_text
-        assert "1" in message_text
+        assert "2" in message_text  # qty=2 for milk
         assert "/start" in message_text
 
         assert "purchase_id" not in mock_context.user_data

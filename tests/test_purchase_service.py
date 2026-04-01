@@ -324,7 +324,7 @@ class TestPurchaseServiceGetPurchase:
 
         purchase = service.get_purchase(purchase_id)
 
-        assert purchase['item_count'] == 2
+        assert purchase['item_count'] == 3  # Sum of quantities: 2 + 1
         assert abs(purchase['total'] - 5.0) < 0.01
 
     def test_get_purchase_includes_status(self, service):
@@ -383,7 +383,7 @@ class TestPurchaseServiceFinishPurchase:
 
         result = service.finish_purchase(purchase_id)
 
-        assert result['item_count'] == 2
+        assert result['item_count'] == 3  # Sum of quantities: 2 + 1
         assert abs(result['total'] - 5.0) < 0.01
         assert result['is_active'] is False
 
@@ -419,13 +419,13 @@ class TestPurchaseServiceIntegration:
         service.add_item(purchase_id, "Bread", 1, 2.00)
         service.add_item(purchase_id, "Eggs", 12, 0.25)
         p = service.get_purchase(purchase_id)
-        assert p['item_count'] == 3
+        assert p['item_count'] == 15  # Sum of quantities: 2 + 1 + 12
         assert abs(p['total'] - 8.0) < 0.01
 
         # Remove one
         service.remove_item(purchase_id, 1)
         p = service.get_purchase(purchase_id)
-        assert p['item_count'] == 2
+        assert p['item_count'] == 14  # Remaining quantities: 2 + 12 = 14
         assert abs(p['total'] - 6.0) < 0.01
 
         # Finish

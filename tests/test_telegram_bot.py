@@ -626,7 +626,7 @@ class TestBotBootstrapIntegration:
         assert total == 3.00
 
         purchase = service.get_purchase(purchase_id)
-        assert purchase["item_count"] == 1
+        assert purchase["item_count"] == 2  # qty=2 for Milk
         assert purchase["total"] == 3.00
 
         total = service.remove_item(purchase_id, 0)
@@ -665,7 +665,7 @@ class TestBotBootstrapIntegration:
         # Retrieve from same service (should be in database)
         purchase = service.get_purchase(purchase_id)
         assert purchase["total"] == 3.00
-        assert purchase["item_count"] == 1
+        assert purchase["item_count"] == 2  # qty=2 for Milk
 
 
 class TestBotBootstrapLogging:

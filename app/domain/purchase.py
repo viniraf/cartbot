@@ -126,9 +126,9 @@ class Purchase:
         """Count items in purchase.
 
         Returns:
-            Number of items.
+            Sum of all item quantities (physical unit count, not entry count).
         """
-        return len(self.items)
+        return sum(item.quantity for item in self.items)
 
     def is_active(self) -> bool:
         """Check if purchase is still active (not finished).

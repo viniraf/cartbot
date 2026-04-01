@@ -130,7 +130,7 @@ class TestPurchaseAggregateRoot:
         purchase.add_item("Eggs", 12, 0.25)
 
         assert len(purchase.items) == 3
-        assert purchase.item_count() == 3
+        assert purchase.item_count() == 15  # Sum of quantities: 2 + 1 + 12
 
     def test_add_item_validates_arguments(self):
         """Should validate item arguments when adding."""
@@ -256,7 +256,7 @@ class TestPurchaseAggregateRoot:
         purchase_str = str(purchase)
         assert "Purchase #1" in purchase_str
         assert "ACTIVE" in purchase_str
-        assert "Items: 1" in purchase_str
+        assert "Items: 2" in purchase_str  # qty=2 for Milk
         assert format_currency(purchase.total()) in purchase_str
 
     def test_string_representation_finished(self):
@@ -317,12 +317,12 @@ class TestPurchaseIntegration:
         # Add items
         purchase.add_item("Milk", 2, 1.50)
         purchase.add_item("Bread", 1, 2.00)
-        assert purchase.item_count() == 2
+        assert purchase.item_count() == 3  # Sum of quantities: 2 + 1
         assert abs(purchase.total() - 5.0) < 0.01
 
         # Remove one item
         purchase.remove_item(0)
-        assert purchase.item_count() == 1
+        assert purchase.item_count() == 1  # Remaining quantity: 1
         assert abs(purchase.total() - 2.0) < 0.01
 
         # Finish
