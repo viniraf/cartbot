@@ -144,8 +144,8 @@ Bot:
 ```
 ✅ 2 itens adicionados
 
-Total de itens: 4
-Valor total: R$ 48,80
+Total de itens: 3
+Valor total: R$ 11,00
 
 --
 Digite /help para mais informações.

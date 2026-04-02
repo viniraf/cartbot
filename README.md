@@ -142,8 +142,8 @@ Bot:
 ```
 ✅ Added 2 items
 
-Total items: 4
-Total amount: $18.47
+Total items: 3
+Total amount: $10.48
 
 --
 Type /help for more information.
