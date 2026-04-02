@@ -106,7 +106,7 @@ MESSAGES = {
     "HELP_FINISH": "/finish - finalizar compra atual",
     "HELP_LANG": "/lang [en|ptbr] - mudar idioma",
     "HELP_ITEMS_TITLE": "Itens",
-    "HELP_ADD_ITEM": "/add Nome | qty | preço",
+    "HELP_ADD_ITEM": "/add preço,item ou /add preço,qtd,item",
     "HELP_EDIT_ITEM": "/edit índice qty preço",
     "HELP_DELETE_ITEM": "/delete índice",
     "HELP_OVERVIEW_TITLE": "Visão Geral",
@@ -124,7 +124,7 @@ MESSAGES = {
     "STORE_INVALID": "O nome do estabelecimento não pode estar vazio. Tente novamente.",
     "STORE_CREATED": "Estabelecimento: {store_name}",
     "STORE_NEXT_STEPS_TITLE": "Próximos passos:",
-    "STORE_ADD_GUIDE": "/add preço,nome — adicionar itens",
+    "STORE_ADD_GUIDE": "/add preço,item — adicionar itens",
     "STORE_LIST_GUIDE": "/list — ver itens",
     "STORE_FINISH_GUIDE": "/finish — finalizar compra",
 

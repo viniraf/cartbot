@@ -106,7 +106,7 @@ MESSAGES = {
     "HELP_FINISH": "/finish - finish current purchase",
     "HELP_LANG": "/lang [en|ptbr] - change language",
     "HELP_ITEMS_TITLE": "Items",
-    "HELP_ADD_ITEM": "/add Name | qty | price",
+    "HELP_ADD_ITEM": "/add price,item or /add price,qty,item",
     "HELP_EDIT_ITEM": "/edit index qty price",
     "HELP_DELETE_ITEM": "/delete index",
     "HELP_OVERVIEW_TITLE": "Overview",
@@ -124,7 +124,7 @@ MESSAGES = {
     "STORE_INVALID": "Store name cannot be empty. Please try again.",
     "STORE_CREATED": "Store: {store_name}",
     "STORE_NEXT_STEPS_TITLE": "Next steps:",
-    "STORE_ADD_GUIDE": "/add price,name — add items",
+    "STORE_ADD_GUIDE": "/add price,item — add items",
     "STORE_LIST_GUIDE": "/list — view items",
     "STORE_FINISH_GUIDE": "/finish — complete purchase",
 
