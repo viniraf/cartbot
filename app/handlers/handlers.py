@@ -826,10 +826,10 @@ async def store_input_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             next_steps_lines = [
                 success_msg,
                 "",
-                "Next steps:",
-                "/add name qty price — add items",
-                "/list — view items",
-                "/finish — complete purchase",
+                format_message(context, "STORE_NEXT_STEPS_TITLE"),
+                format_message(context, "STORE_ADD_GUIDE"),
+                format_message(context, "STORE_LIST_GUIDE"),
+                format_message(context, "STORE_FINISH_GUIDE"),
             ]
             await update.message.reply_text(
                 append_help_hint(format_command_block(next_steps_lines), context)

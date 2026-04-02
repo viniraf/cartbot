@@ -123,6 +123,10 @@ MESSAGES = {
     "STORE_PROMPT": "What is the store name?",
     "STORE_INVALID": "Store name cannot be empty. Please try again.",
     "STORE_CREATED": "Store: {store_name}",
+    "STORE_NEXT_STEPS_TITLE": "Next steps:",
+    "STORE_ADD_GUIDE": "/add price,name — add items",
+    "STORE_LIST_GUIDE": "/list — view items",
+    "STORE_FINISH_GUIDE": "/finish — complete purchase",
 
     # Phase 9.13 - Unified error message structure
     # All errors follow format: TITLE, EXPLANATION, EXAMPLE, FOOTER

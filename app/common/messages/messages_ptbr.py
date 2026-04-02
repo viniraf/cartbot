@@ -123,6 +123,10 @@ MESSAGES = {
     "STORE_PROMPT": "Qual o nome do estabelecimento?",
     "STORE_INVALID": "O nome do estabelecimento não pode estar vazio. Tente novamente.",
     "STORE_CREATED": "Estabelecimento: {store_name}",
+    "STORE_NEXT_STEPS_TITLE": "Próximos passos:",
+    "STORE_ADD_GUIDE": "/add preço,nome — adicionar itens",
+    "STORE_LIST_GUIDE": "/list — ver itens",
+    "STORE_FINISH_GUIDE": "/finish — finalizar compra",
 
     # Phase 9.13 - Unified error message structure
     # All errors follow format: TITLE, EXPLANATION, EXAMPLE, FOOTER
