@@ -16,7 +16,9 @@ CartBot simplifica as compras do dia a dia. Registre itens enquanto você compra
 
 | Comando | Descrição |
 |---------|-----------|
-| `/start [ptbr\|enus]` | Inicie uma nova compra (escolha o idioma) |
+| `/start` | Inicie uma nova compra (Português) |
+| `/start en` | Inicie uma nova compra (Inglês) |
+| `/start ptbr` | Inicie uma nova compra (Português) |
 | `/continue` | Retome uma compra ativa |
 | `/new` | Inicie uma nova compra (se houver uma ativa) |
 | `/add` | Adicione itens à sua compra |
@@ -37,11 +39,7 @@ CartBot simplifica as compras do dia a dia. Registre itens enquanto você compra
 /start ptbr
 ```
 
-ou
-
-```
-/start enus
-```
+Ou `/start` para usar Inglês.
 
 O bot pedirá o nome do mercado.
 
@@ -143,13 +141,17 @@ Bot: `✅ 2 itens adicionados`
 
 Bot:
 ```
-📦 Compra - Assaí
+Items
 
-Arroz (2) ................ R$ 39,80
-Feijão (1) ............... R$ 5,00
-Miojo (2) ................ R$ 6,00
+1. arroz × 2 @ R$ 19,90 = R$ 39,80
+2. feijão × 1 @ R$ 5,00 = R$ 5,00
+3. miojo × 2 @ R$ 3,00 = R$ 6,00
 
-Total: 5 itens | R$ 50,80
+Total: R$ 50,80
+
+Actions:
+/delete N — remove item
+/edit N qty price — modify item
 ```
 
 ### Finalizar
@@ -169,14 +171,29 @@ Bot: `✅ Compra finalizada! Total: R$ 50,80`
 /add feijao 19.90
 ```
 
-Erro: `❌ Formato inválido.\n\nUse: /add preco,item ou /add preco,quantidade,item\n\nExemplos:\n/add 19.90,arroz\n/add 5.30,2,miojo`
+Erro:
+```
+❌ Formato inválido
+
+Os itens devem incluir preço e nome.
+
+Formato correto:
+/add 19.90,feijao
+ou
+/add 19.90,2,feijao
+```
 
 **Comando desconhecido:**
 ```
 /checkout
 ```
 
-Resposta: `❌ Comando desconhecido.\n\nUse /help para ver os comandos disponíveis.`
+Resposta:
+```
+❌ Comando desconhecido.
+
+Use /help para ver os comandos disponíveis.
+```
 
 **Dicas:**
 - Sempre comece com um comando (/)
@@ -189,12 +206,12 @@ Resposta: `❌ Comando desconhecido.\n\nUse /help para ver os comandos disponív
 
 CartBot suporta dois idiomas:
 
-- **PT-BR** (Português Brasileiro) — `/start ptbr`
-- **EN-US** (Inglês) — `/start enus`
+- **PT-BR** (Português Brasileiro) — `/start` ou `/start ptbr`
+- **EN-US** (Inglês) — `/start en`
 
 Todas as mensagens estarão no idioma escolhido.
 
-**Mudar idioma:** Chame `/start` novamente e selecione um idioma diferente.
+**Mudar idioma:** Chame `/start en` ou `/start ptbr` para mudar de idioma.
 
 ---
 

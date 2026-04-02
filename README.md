@@ -16,7 +16,9 @@ CartBot simplifies everyday shopping. Record items while you shop at the market,
 
 | Command | Description |
 |---------|-------------|
-| `/start [ptbr\|enus]` | Begin a new purchase (set language) |
+| `/start` | Begin a new purchase (English) |
+| `/start en` | Begin a new purchase (English) |
+| `/start ptbr` | Begin a new purchase (Portuguese) |
 | `/continue` | Resume an active purchase |
 | `/new` | Start a new purchase (if one is active) |
 | `/add` | Add items to your purchase |
@@ -34,20 +36,14 @@ CartBot simplifies everyday shopping. Record items while you shop at the market,
 ### Step 1 — Start a Purchase
 
 ```
-/start ptbr
+/start
 ```
 
-or
-
-```
-/start enus
-```
-
-The bot will ask for the store name.
+The bot will ask for the store name. (English by default, or use `/start ptbr` for Portuguese)
 
 ### Step 2 — Store Name
 
-Type the store name (e.g., `Assaí`, `Carrefour`, `Mercado Local`)
+Type the store name (e.g., `Whole Foods`, `Trader Joe's`, `Local Market`)
 
 ### Step 3 — If You Already Have an Active Purchase
 
@@ -65,9 +61,9 @@ You'll see two options:
 Add one or more items without leaving the conversation:
 
 ```
-/add 19.90,feijao
-/add 19.90,3,feijao
-/add 5.30,2,miojo 500g
+/add 5.99,bread
+/add 5.99,3,bread
+/add 3.50,2,milk 1L
 ```
 
 Format: `/add price,item` or `/add price,quantity,item`
@@ -76,7 +72,7 @@ Format: `/add price,item` or `/add price,quantity,item`
 - Comma-separated (no spaces)
 - Price first, then item name
 - Quantity is optional (default = 1)
-- Item names can include units (e.g., "arroz 1kg", "frango 500g")
+- Item names can include units (e.g., "rice 1kg", "chicken 500g")
 
 ### Batch Format (Multiple Items)
 
@@ -84,9 +80,9 @@ Add multiple items at once:
 
 ```
 /add
-19.90,feijao
-5.30,2,miojo
-10.00,3,arroz
+5.99,bread
+3.50,2,milk
+2.99,3,eggs dozen
 ```
 
 Just send `/add` and then list items on separate lines. Same format as inline.
@@ -110,30 +106,30 @@ For each purchase:
 ### Start
 
 ```
-/start ptbr
+/start
 ```
 
-Bot: `Qual o nome do mercado?`
+Bot: `What's the store name?`
 
-You: `Assaí`
+You: `Whole Foods`
 
-Bot: `✅ Compra iniciada em Assaí`
+Bot: `✅ Purchase started at Whole Foods`
 
 ### Add Items
 
 ```
-/add 19.90,2,arroz
+/add 5.99,2,bread
 ```
 
-Bot: `✅ Item adicionado: 2x arroz | R$ 39,80`
+Bot: `✅ Item added: 2x bread | $11.98`
 
 ```
 /add
-5.00,feijao
-3.00,2,miojo
+3.50,milk
+2.99,2,eggs
 ```
 
-Bot: `✅ 2 itens adicionados`
+Bot: `✅ 2 items added`
 
 ### View List
 
@@ -143,13 +139,17 @@ Bot: `✅ 2 itens adicionados`
 
 Bot:
 ```
-📦 Compra - Assaí
+Items
 
-Arroz (2) ................ R$ 39,80
-Feijão (1) ............... R$ 5,00
-Miojo (2) ................ R$ 6,00
+1. bread × 2 @ $5.99 = $11.98
+2. milk × 1 @ $3.50 = $3.50
+3. eggs × 2 @ $2.99 = $5.98
 
-Total: 5 itens | R$ 50,80
+Total: $21.46
+
+Actions:
+/delete N — remove item
+/edit N qty price — modify item
 ```
 
 ### Finish
@@ -158,7 +158,7 @@ Total: 5 itens | R$ 50,80
 /finish
 ```
 
-Bot: `✅ Compra finalizada! Total: R$ 50,80`
+Bot: `✅ Purchase completed! Total: $21.46`
 
 ---
 
@@ -166,17 +166,32 @@ Bot: `✅ Compra finalizada! Total: R$ 50,80`
 
 **Invalid format:**
 ```
-/add feijao 19.90
+/add bread 5.99
 ```
 
-Error: `❌ Invalid format.\n\nUse: /add price,item or /add price,quantity,item\n\nExamples:\n/add 19.90,arroz\n/add 5.30,2,miojo`
+Error:
+```
+❌ Invalid /add Format
+
+Items must include price and name.
+
+Correct format:
+/add 5.99,bread
+or
+/add 5.99,2,bread
+```
 
 **Unknown command:**
 ```
 /checkout
 ```
 
-Response: `❌ Unknown command.\n\nUse /help to see available commands.`
+Response:
+```
+❌ Unknown command.
+
+Use /help to see available commands.
+```
 
 **Tips:**
 - Always start with a command (/)
@@ -189,12 +204,12 @@ Response: `❌ Unknown command.\n\nUse /help to see available commands.`
 
 CartBot supports two languages:
 
+- **EN-US** (English) — `/start` or `/start en`
 - **PT-BR** (Brazilian Portuguese) — `/start ptbr`
-- **EN-US** (English) — `/start enus`
 
 All messages will be in your chosen language.
 
-**Change language:** Call `/start` again and select a different language.
+**Change language:** Call `/start en` or `/start ptbr` to switch languages.
 
 ---
 
