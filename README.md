@@ -127,6 +127,9 @@ Bot:
 
 Total items: 2
 Total amount: $11.98
+
+--
+Type /help for more information.
 ```
 
 ```
@@ -141,6 +144,9 @@ Bot:
 
 Total items: 4
 Total amount: $18.47
+
+--
+Type /help for more information.
 ```
 
 ### View List
@@ -162,6 +168,9 @@ Total: $21.46
 Actions:
 /delete N — remove item
 /edit N qty price — modify item
+
+--
+Type /help for more information.
 ```
 
 ### Finish

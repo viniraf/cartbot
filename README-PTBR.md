@@ -129,6 +129,9 @@ Bot:
 
 Total de itens: 2
 Valor total: R$ 39,80
+
+--
+Digite /help para mais informações.
 ```
 
 ```
@@ -143,6 +146,9 @@ Bot:
 
 Total de itens: 4
 Valor total: R$ 48,80
+
+--
+Digite /help para mais informações.
 ```
 
 ### Ver Lista
@@ -164,6 +170,9 @@ Total: R$ 50,80
 Actions:
 /delete N — remove item
 /edit N qty price — modify item
+
+--
+Digite /help para mais informações.
 ```
 
 ### Finalizar
