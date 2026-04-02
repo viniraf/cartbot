@@ -1,199 +1,249 @@
 # 🛒 CartBot
 
-Bot pessoal de Telegram para registrar compras em tempo real e acompanhar o valor total durante o mercado — simples, rápido e focado em uso real.
+Bot de Telegram para registrar compras em tempo real — rastreie itens, quantidades e valores enquanto compra.
 
 ---
 
-## ✨ Visão Geral
+## 📌 Overview
 
-O CartBot nasceu de uma necessidade simples: parar de usar calculadora no mercado e ainda lembrar quanto cada item custou.
+CartBot simplifica as compras do dia a dia. Registre itens enquanto você compra no mercado, veja o total em tempo real e tenha um histórico de todas as suas compras.
 
-Com ele, você registra os produtos enquanto compra e acompanha o total em tempo real direto no Telegram.
-
-Sem planilhas.  
-Sem apps complexos.  
-Sem fricção.
+**Sem calculadora. Sem planilhas. Sem fricção.**
 
 ---
 
-## 🎯 Objetivo
+## 💬 Commands
 
-Ajudar durante compras do dia a dia permitindo:
-
-- Registrar itens rapidamente
-- Acompanhar o total acumulado
-- Ver detalhes da compra a qualquer momento
-- Corrigir erros facilmente
-- Manter histórico simples
-
-Tudo via chat.
-
----
-
-## 🚀 Funcionalidades (MVP)
-
-### 🟢 Compra
-
-- Iniciar uma compra com:
-  - Nome do mercado
-  - Data automática
-- Adicionar itens com:
-  - Nome livre
-  - Quantidade
-  - Preço unitário
-- Ver total atualizado a cada item
+| Command | Description |
+|---------|-------------|
+| `/start [ptbr\|enus]` | Begin a new purchase (set language) |
+| `/continue` | Resume an active purchase |
+| `/new` | Start a new purchase (if one is active) |
+| `/add` | Add items to your purchase |
+| `/list` | View all items in current purchase |
+| `/total` | See total amount and item count |
+| `/edit` | Modify or remove items |
+| `/delete` | Remove a specific item |
+| `/finish` | Complete the purchase and save |
+| `/help` | Show all available commands |
 
 ---
 
-### 📊 Visualização
+## 🚀 Getting Started
 
-- Resumo rápido com total atual
-- Detalhamento completo com:
-  - Nome do item
-  - Quantidade
-  - Valor unitário
-  - Subtotal
-  - Total geral
+### Step 1 — Start a Purchase
 
----
+```
+/start ptbr
+```
 
-### ✏️ Edição
+or
 
-- Editar qualquer item
-- Remover itens
-- Navegar entre menus sem perder estado
+```
+/start enus
+```
 
----
+The bot will ask for the store name.
 
-### 🗂 Histórico
+### Step 2 — Store Name
 
-- Salvar compras localmente
-- Permitir futuras análises simples
+Type the store name (e.g., `Assaí`, `Carrefour`, `Mercado Local`)
 
----
+### Step 3 — If You Already Have an Active Purchase
 
-## 🧠 Casos de Uso
+You'll see two options:
 
-- Acompanhar gasto no mercado em tempo real
-- Evitar surpresas no caixa
-- Conferir itens antes de pagar
-- Ter histórico básico de compras
+- `/continue` — Resume the current purchase
+- `/new` — Start a fresh purchase
 
 ---
 
-## 🏗 Arquitetura (Visão Geral)
+## ➕ Adding Items
 
-O projeto segue uma arquitetura simples e evolutiva:
+### Inline Format (Quick)
 
-- Fácil de entender
-- Baixa carga cognitiva
-- Preparado para crescer
+Add one or more items without leaving the conversation:
 
-### Princípios
+```
+/add 19.90,feijao
+/add 19.90,3,feijao
+/add 5.30,2,miojo 500g
+```
 
-- Domínio isolado da interface Telegram
-- Código legível e testável
-- Estrutura modular sem overengineering
-- Preparado para relatórios futuros
+Format: `/add price,item` or `/add price,quantity,item`
 
-Detalhes completos de arquitetura serão documentados posteriormente.
+**Rules:**
+- Comma-separated (no spaces)
+- Price first, then item name
+- Quantity is optional (default = 1)
+- Item names can include units (e.g., "arroz 1kg", "frango 500g")
+
+### Batch Format (Multiple Items)
+
+Add multiple items at once:
+
+```
+/add
+19.90,feijao
+5.30,2,miojo
+10.00,3,arroz
+```
+
+Just send `/add` and then list items on separate lines. Same format as inline.
 
 ---
 
-## 🧩 Estrutura Inicial
+## 📊 What the Bot Tracks
 
-A definir.
+For each purchase:
+
+- **Store name** — where you're shopping
+- **Total items** — count of physical units (e.g., 3 boxes, 2 kg)
+- **Total amount** — sum of all items
+- **Item details** — name, quantity, unit price, subtotal
+- **Active purchase** — your current shopping session
 
 ---
 
-## 🛠 Stack
+## 📋 Example Session
 
-- Python 3.11+
+### Start
+
+```
+/start ptbr
+```
+
+Bot: `Qual o nome do mercado?`
+
+You: `Assaí`
+
+Bot: `✅ Compra iniciada em Assaí`
+
+### Add Items
+
+```
+/add 19.90,2,arroz
+```
+
+Bot: `✅ Item adicionado: 2x arroz | R$ 39,80`
+
+```
+/add
+5.00,feijao
+3.00,2,miojo
+```
+
+Bot: `✅ 2 itens adicionados`
+
+### View List
+
+```
+/list
+```
+
+Bot:
+```
+📦 Compra - Assaí
+
+Arroz (2) ................ R$ 39,80
+Feijão (1) ............... R$ 5,00
+Miojo (2) ................ R$ 6,00
+
+Total: 5 itens | R$ 50,80
+```
+
+### Finish
+
+```
+/finish
+```
+
+Bot: `✅ Compra finalizada! Total: R$ 50,80`
+
+---
+
+## ⚠️ Error Handling
+
+**Invalid format:**
+```
+/add feijao 19.90
+```
+
+Error: `❌ Invalid format.\n\nUse: /add price,item or /add price,quantity,item\n\nExamples:\n/add 19.90,arroz\n/add 5.30,2,miojo`
+
+**Unknown command:**
+```
+/checkout
+```
+
+Response: `❌ Unknown command.\n\nUse /help to see available commands.`
+
+**Tips:**
+- Always start with a command (/)
+- Use comma separators (no spaces)
+- If unsure, type `/help`
+
+---
+
+## 🌍 Language Support
+
+CartBot supports two languages:
+
+- **PT-BR** (Brazilian Portuguese) — `/start ptbr`
+- **EN-US** (English) — `/start enus`
+
+All messages will be in your chosen language.
+
+**Change language:** Call `/start` again and select a different language.
+
+---
+
+## 🛠 Developer Information
+
+### Stack
+
+- Python 3.13+
 - python-telegram-bot
 - SQLite
 
----
+### Running Locally
 
-## ▶️ Como Rodar Localmente
+1. Create virtual environment:
+   ```
+   python -m venv .venv
+   source .venv/bin/activate  # Linux/Mac
+   .venv\Scripts\activate     # Windows
+   ```
 
-### Criar ambiente virtual
+2. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
 
-python -m venv .venv  
-source .venv/bin/activate  (Linux/Mac)  
-.venv\Scripts\activate     (Windows)
+3. Configure environment:
+   ```
+   TELEGRAM_TOKEN=your_token_here
+   ```
 
-### Instalar dependências
+4. Run the bot:
+   ```
+   python app/main.py
+   ```
 
-pip install -r requirements.txt
+### Testing
 
-### Configurar variáveis
-
-Crie um arquivo .env com:
-
-TELEGRAM_TOKEN=seu_token_aqui
-
-### Rodar o bot
-
-python app/main.py
-
----
-
-## 🚀 Deploy
-
-O projeto foi pensado para rodar gratuitamente em plataformas como:
-
-- Railway
-- Render
-- Fly.io
-
-Com deploy simples via Docker ou Python puro.
-
-Guia de deploy detalhado será adicionado na documentação.
-
----
-
-## 🧪 Testes
-
-Foco em:
-
-- Regras de negócio isoladas
-- Serviços testáveis
-- Lógica desacoplada do Telegram
-
-Execução:
-
+```
 pytest
+```
+
+All tests are located in the `tests/` directory.
 
 ---
-
-## 🔮 Roadmap Futuro
-
-Possíveis evoluções:
-
-- Relatórios de preço por item
-- Histórico e gráficos
-- Lista de compras integrada
-- Busca por compras antigas
-- Backup em nuvem
-- Multiusuário (família)
-- Versão web
-
----
-
-## 🤖 Filosofia do Projeto
-
-O CartBot segue três pilares:
-
-Simplicidade  
-Resolver um problema real sem complexidade desnecessária.
-
-Clareza  
-Código legível acima de abstrações excessivas.
-
-Evolução  
-Começar pequeno, crescer com propósito.
-
 
 ## 📌 Status
 
-Em desenvolvimento inicial (MVP)
+**Current Version:** V3  
+**Status:** Active Development  
+**Last Updated:** 2026-04  
+
+For issues, feature requests, or contributions, please refer to the documentation in the `docs/` folder.
