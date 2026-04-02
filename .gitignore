@@ -33,9 +33,12 @@ env/
 *.sqlite3
 
 # ==============================
-# Logs
+# Logs & Coverage
 # ==============================
 *.log
+.coverage
+.coverage.*
+htmlcov/
 
 # ==============================
 # OS Files
