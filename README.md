@@ -159,11 +159,11 @@ Bot:
 ```
 Items
 
-1. bread × 2 @ $5.99 = $11.98
+1. bread × 1 @ $5.99 = $5.99
 2. milk × 1 @ $3.50 = $3.50
 3. eggs × 2 @ $2.99 = $5.98
 
-Total: $21.46
+Total: $15.47
 
 Actions:
 /delete N — remove item
@@ -179,7 +179,7 @@ Type /help for more information.
 /finish
 ```
 
-Bot: `✅ Purchase completed! Total: $21.46`
+Bot: `✅ Purchase completed! Total: $15.47`
 
 ---
 

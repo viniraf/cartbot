@@ -181,7 +181,7 @@ Digite /help para mais informações.
 /finish
 ```
 
-Bot: `✅ Compra finalizada! Total: R$ 50,80`
+Bot: `✅ Compra finalizada! Total: R$ 13,00`
 
 ---
 
