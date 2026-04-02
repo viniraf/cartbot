@@ -18,7 +18,7 @@ MESSAGES = {
     "START_ACTIVE_ITEMS": "Itens: {item_count}",
     "START_ACTIVE_TOTAL": "Total: {total}",
     "START_ACTIVE_OPTIONS": "Opções:",
-    "START_ACTIVE_RESUME": "/resume - continuar esta compra",
+    "START_ACTIVE_RESUME": "/continue - continuar esta compra",
     "START_ACTIVE_NEW": "/new - finalizar e começar uma nova",
 
     # /resume command

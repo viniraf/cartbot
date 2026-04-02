@@ -179,15 +179,15 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 item_count = active_purchase.get("item_count", 0)
 
                 prompt_lines = [
-                    "You have an active purchase.",
+                    format_message(context, "START_ACTIVE"),
                     "",
-                    f"Created: {created_at[:10]}",
-                    f"Items: {item_count}",
-                    f"Total: {format_currency(total)}",
+                    format_message(context, "START_ACTIVE_CREATED", created_at=created_at[:10]),
+                    format_message(context, "START_ACTIVE_ITEMS", item_count=item_count),
+                    format_message(context, "START_ACTIVE_TOTAL", total=format_currency(total)),
                     "",
-                    "Options:",
-                    "/continue — continue this purchase",
-                    "/new — finish and start a new one",
+                    format_message(context, "START_ACTIVE_OPTIONS"),
+                    format_message(context, "START_ACTIVE_RESUME"),
+                    format_message(context, "START_ACTIVE_NEW"),
                 ]
                 await update.message.reply_text(append_help_hint(format_command_block(prompt_lines), context))
                 return
@@ -585,10 +585,9 @@ async def resume_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             # Purchase was found but is finished (not active)
             logger.info("[User %s] /resume Purchase %s is finished", user_id, purchase_id)
             context.user_data.pop("purchase_id", None)
+            finished_msg = format_message(context, "RESUME_FINISHED")
             await update.message.reply_text(
-                append_help_hint(
-                    "This purchase is finished. Use /start to begin a new purchase.", context
-                )
+                append_help_hint(finished_msg, context)
             )
             return
 
@@ -600,16 +599,16 @@ async def resume_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         logger.info("[User %s] Resumed purchase %s (items=%s, total=%.2f)", user_id, purchase_id, item_count, total)
 
         summary_lines = [
-            "Purchase resumed.",
+            format_message(context, "RESUME_TITLE"),
             "",
-            f"Created: {created_at[:10]}",
-            f"Items: {item_count}",
-            f"Total: {format_currency(total)}",
+            format_message(context, "RESUME_CREATED", created_at=created_at[:10]),
+            format_message(context, "RESUME_ITEMS", item_count=item_count),
+            format_message(context, "RESUME_TOTAL", total=format_currency(total)),
             "",
-            "Actions:",
-            "/add — add item",
-            "/list — show all items",
-            "/finish — complete purchase",
+            format_message(context, "RESUME_ACTIONS"),
+            format_message(context, "RESUME_ADD_ITEM"),
+            format_message(context, "RESUME_LIST_ITEMS"),
+            format_message(context, "RESUME_FINISH"),
         ]
         await update.message.reply_text(append_help_hint(format_command_block(summary_lines), context))
 
