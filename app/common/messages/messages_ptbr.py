@@ -139,7 +139,7 @@ MESSAGES = {
     # Invalid /add format
     "ERROR_INVALID_ADD_FORMAT_TITLE": "❌ Formato /add Inválido",
     "ERROR_INVALID_ADD_FORMAT_EXPLANATION": "Os itens devem incluir preço e nome.",
-    "ERROR_INVALID_ADD_FORMAT_EXAMPLE": "Formato correto: /add 19.90,item ou /add 19.90,2,item",
+    "ERROR_INVALID_ADD_FORMAT_EXAMPLE": "Formato correto:\n/add 19.90,item\nou\n/add 19.90,2,item",
 
     # Invalid delete index
     "ERROR_INVALID_DELETE_INDEX_TITLE": "❌ Índice de Item Inválido",
