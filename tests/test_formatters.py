@@ -29,7 +29,8 @@ def test_append_help_hint_adds_footer():
     original = "Hello world"
     got = append_help_hint(original)
     assert "Need help? Use /help" in got
-    # footer should be separated by blank line
+    # footer should be separated by -- and blank line
+    assert "--\n" in got
     assert original in got
     assert got.endswith("/help")
 

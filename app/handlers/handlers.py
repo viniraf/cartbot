@@ -38,6 +38,7 @@ def format_error_message(context, error_type: str) -> str:
     
     Correct format: /command example
     
+    --
     Type /help for more information.
 
     Args:
@@ -45,14 +46,14 @@ def format_error_message(context, error_type: str) -> str:
         error_type: Error type (e.g., "NO_ACTIVE_PURCHASE", "INVALID_ADD_FORMAT")
 
     Returns:
-        Formatted multi-line error message
+        Formatted multi-line error message with standardized footer
     """
     title = format_message(context, f"ERROR_{error_type}_TITLE")
     explanation = format_message(context, f"ERROR_{error_type}_EXPLANATION")
     example = format_message(context, f"ERROR_{error_type}_EXAMPLE")
     footer = format_message(context, "ERROR_HELP_FOOTER")
     
-    return f"{title}\n\n{explanation}\n\n{example}\n\n{footer}"
+    return f"{title}\n\n{explanation}\n\n{example}\n\n--\n{footer}"
 
 
 
