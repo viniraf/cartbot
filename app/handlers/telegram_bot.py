@@ -11,6 +11,7 @@ from telegram.ext import Application, ContextTypes
 from app.infra import Config, init_db
 from app.services import PurchaseService
 from app.infra.repositories import SQLitePurchaseRepository
+from app.handlers.handlers import unknown_command_handler
 
 
 logger = logging.getLogger(__name__)
@@ -104,25 +105,6 @@ def setup_handlers(app: Application) -> None:
 
     # Unknown/legacy commands fallback
     allowed_command_pattern = r"^/(start|continue|new|add|edit|delete|list|total|finish|help|lang)(?:@[\w]+)?$"
-
-    async def unknown_command_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-        text = getattr(getattr(update, "message", None), "text", "") or ""
-        cmd = (text.split()[0] if text else "").strip()
-        if not cmd:
-            return
-
-        msg = (
-            "❌ Unknown command.\n\n"
-            "Correct format:\n"
-            "`/start`\n\n"
-            "Type /help for more information."
-        )
-        try:
-            if update and getattr(update, "message", None):
-                await update.message.reply_text(msg)
-        except Exception:
-            # If sending fails, we still don't want the bot to crash.
-            return
 
     app.add_handler(
         MessageHandler(

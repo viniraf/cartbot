@@ -844,3 +844,24 @@ async def store_input_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         logger.exception(f"[User {update.effective_user.id}] Store input error: {e}")
         error_msg = format_error_message(context, "GENERIC")
         await update.message.reply_text(error_msg)
+
+
+@safe_handler
+async def unknown_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle unknown/invalid commands.
+
+    Responds to commands that don't match any registered handler.
+    Provides localized error message with /help suggestion.
+    No footer is appended for this specific case.
+
+    Args:
+        update: Telegram update containing the unknown command
+        context: Handler context with user language preference
+    """
+    title = format_message(context, "UNKNOWN_COMMAND_TITLE")
+    message = format_message(context, "UNKNOWN_COMMAND_MESSAGE")
+
+    # Combine title and message without footer (as per bug report)
+    response = f"{title}\n\n{message}"
+
+    await update.message.reply_text(response)

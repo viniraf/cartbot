@@ -174,6 +174,10 @@ MESSAGES = {
     # Error help footer
     "ERROR_HELP_FOOTER": "Digite /help para mais informações.",
 
+    # Unknown command
+    "UNKNOWN_COMMAND_TITLE": "❌ Comando desconhecido.",
+    "UNKNOWN_COMMAND_MESSAGE": "Use /help para ver os comandos disponíveis.",
+
     # General/errors (kept for backward compatibility)
     "ERROR_GENERIC": "Ocorreu um erro. Tente novamente mais tarde.",
     "HELP_HINT": "Precisa de ajuda? Use /help",
