@@ -7,10 +7,10 @@ no dependencies beyond the Python stdlib.
 Functions:
     format_currency(value: float) -> str
     format_command_block(lines: list[str]) -> str
-    append_help_hint(message: str) -> str
+    append_help_hint(message: str, context: any = None) -> str
 """
 
-from typing import List
+from typing import List, Any
 
 
 def format_currency(value: float) -> str:
@@ -39,19 +39,27 @@ def format_command_block(lines: List[str]) -> str:
     return "\n".join(lines)
 
 
-def append_help_hint(message: str) -> str:
+def append_help_hint(message: str, context: Any = None) -> str:
     """Append a standard help hint footer to a message.
 
     The footer is separated by a horizontal rule and instructs the user
-    how to access /help.
+    how to access /help. Uses localized text when context is provided.
 
     Args:
         message: The original user message.
+        context: Handler context for localization (optional for backward compatibility).
     Returns:
         The message with footer appended, ensuring there are blank lines
         before the hint.
     """
-    hint = "--\nNeed help? Use /help"
+    if context is not None:
+        # Import here to avoid circular imports
+        from app.common.messages import format_message
+        hint = f"--\n{format_message(context, 'ERROR_HELP_FOOTER')}"
+    else:
+        # Fallback for backward compatibility (should not be used in production)
+        hint = "--\nNeed help? Use /help"
+    
     # ensure exactly one blank line before the hint
     if not message.endswith("\n"):
         message = message + "\n"

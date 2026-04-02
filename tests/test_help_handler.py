@@ -43,7 +43,7 @@ class TestHelpHandler:
         assert "/add" in text
         assert "/total" in text
         # Help hint appended
-        assert "Need help? Use /help" in text
+        assert "Type /help for more information" in text
 
     @pytest.mark.asyncio
     async def test_help_formatting_consistent(self, mock_update, mock_context):
