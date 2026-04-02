@@ -118,15 +118,15 @@ Bot: `✅ Purchase started at Whole Foods`
 ### Add Items
 
 ```
-/add 5.99,2,bread
+/add 5.99,bread
 ```
 
 Bot:
 ```
-✅ Added 2 items
+✅ Added 1 item
 
-Total items: 2
-Total amount: $11.98
+Total items: 1
+Total amount: $5.99
 
 --
 Type /help for more information.
@@ -140,10 +140,10 @@ Type /help for more information.
 
 Bot:
 ```
-✅ Added 2 items
+✅ Added 3 items
 
-Total items: 3
-Total amount: $9.48
+Total items: 4
+Total amount: $15.47
 
 --
 Type /help for more information.

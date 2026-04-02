@@ -120,15 +120,15 @@ Bot: `✅ Compra iniciada em Assaí`
 ### Adicionar Itens
 
 ```
-/add 19.90,2,arroz
+/add 5.00,feijao
 ```
 
 Bot:
 ```
-✅ 2 itens adicionados
+✅ 1 item adicionado
 
-Total de itens: 2
-Valor total: R$ 39,80
+Total de itens: 1
+Valor total: R$ 5,00
 
 --
 Digite /help para mais informações.
@@ -136,16 +136,16 @@ Digite /help para mais informações.
 
 ```
 /add
-5.00,feijao
-3.00,2,miojo
+3.00,miojo
+2.50,2,arroz
 ```
 
 Bot:
 ```
-✅ 2 itens adicionados
+✅ 3 itens adicionados
 
-Total de itens: 3
-Valor total: R$ 11,00
+Total de itens: 4
+Valor total: R$ 13,00
 
 --
 Digite /help para mais informações.
@@ -161,11 +161,11 @@ Bot:
 ```
 Items
 
-1. arroz × 2 @ R$ 19,90 = R$ 39,80
-2. feijão × 1 @ R$ 5,00 = R$ 5,00
-3. miojo × 2 @ R$ 3,00 = R$ 6,00
+1. feijão × 1 @ R$ 5,00 = R$ 5,00
+2. miojo × 1 @ R$ 3,00 = R$ 3,00
+3. arroz × 2 @ R$ 2,50 = R$ 5,00
 
-Total: R$ 50,80
+Total: R$ 13,00
 
 Actions:
 /delete N — remove item
