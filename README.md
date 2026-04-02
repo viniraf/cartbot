@@ -1,14 +1,14 @@
 # 🛒 CartBot
 
-Bot de Telegram para registrar compras em tempo real — rastreie itens, quantidades e valores enquanto compra.
+Telegram bot to record purchases in real time — track items, quantities, and amounts while shopping.
 
 ---
 
 ## 📌 Overview
 
-CartBot simplifica as compras do dia a dia. Registre itens enquanto você compra no mercado, veja o total em tempo real e tenha um histórico de todas as suas compras.
+CartBot simplifies everyday shopping. Record items while you shop at the market, see the total in real time, and have a history of all your purchases.
 
-**Sem calculadora. Sem planilhas. Sem fricção.**
+**No calculator. No spreadsheets. No friction.**
 
 ---
 
