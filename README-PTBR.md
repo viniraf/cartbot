@@ -123,7 +123,13 @@ Bot: `✅ Compra iniciada em Assaí`
 /add 19.90,2,arroz
 ```
 
-Bot: `✅ Item adicionado: 2x arroz | R$ 39,80`
+Bot:
+```
+✅ 2 itens adicionados
+
+Total de itens: 2
+Valor total: R$ 39,80
+```
 
 ```
 /add
@@ -131,7 +137,13 @@ Bot: `✅ Item adicionado: 2x arroz | R$ 39,80`
 3.00,2,miojo
 ```
 
-Bot: `✅ 2 itens adicionados`
+Bot:
+```
+✅ 2 itens adicionados
+
+Total de itens: 4
+Valor total: R$ 48,80
+```
 
 ### Ver Lista
 

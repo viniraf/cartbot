@@ -121,7 +121,13 @@ Bot: `✅ Purchase started at Whole Foods`
 /add 5.99,2,bread
 ```
 
-Bot: `✅ Item added: 2x bread | $11.98`
+Bot:
+```
+✅ Added 2 items
+
+Total items: 2
+Total amount: $11.98
+```
 
 ```
 /add
@@ -129,7 +135,13 @@ Bot: `✅ Item added: 2x bread | $11.98`
 2.99,2,eggs
 ```
 
-Bot: `✅ 2 items added`
+Bot:
+```
+✅ Added 2 items
+
+Total items: 4
+Total amount: $18.47
+```
 
 ### View List
 
