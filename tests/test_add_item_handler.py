@@ -86,6 +86,23 @@ class TestAddItemInlineCommaFormat:
         assert purchase["total"] == 19.90
 
     @pytest.mark.asyncio
+    async def test_add_item_single_uses_singular_message(self, mock_update, mock_context):
+        """Add a single item should display singular message (1 item added)."""
+        purchase_id = await setup_active_purchase(mock_context)
+        
+        mock_update.message.text = "/add 19.90,feijao"
+        await add_item_handler(mock_update, mock_context)
+        
+        # Should respond with singular message
+        mock_update.message.reply_text.assert_called_once()
+        response = mock_update.message.reply_text.call_args[0][0]
+        
+        # Check for singular form (not plural)
+        assert "1 item" in response.lower() or "1 item adicionado" in response.lower()
+        assert "items added" not in response.lower()  # Should NOT have plural form
+        assert "itens adicionados" not in response.lower()  # Should NOT have plural form
+
+    @pytest.mark.asyncio
     async def test_add_item_inline_price_qty_name(self, mock_update, mock_context):
         """Add item inline: /add price,qty,name."""
         purchase_id = await setup_active_purchase(mock_context)

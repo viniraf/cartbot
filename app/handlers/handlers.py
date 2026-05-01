@@ -286,7 +286,11 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         final_total = purchase["total"]
         final_item_count = purchase["item_count"]
         
-        items_added_msg = format_message(context, "ADD_ITEMS_COUNT", count=total_physical_units)
+        # Choose singular or plural message based on count
+        if total_physical_units == 1:
+            items_added_msg = format_message(context, "ADD_ITEMS_COUNT_SINGULAR")
+        else:
+            items_added_msg = format_message(context, "ADD_ITEMS_COUNT_PLURAL", count=total_physical_units)
         total_items_msg = format_message(context, "ADD_TOTAL_ITEMS", item_count=final_item_count)
         total_amount_msg = format_message(context, "ADD_TOTAL_AMOUNT", total=format_currency(final_total, context))
         
