@@ -1183,15 +1183,10 @@ Need help? Use /help
        return messages.get(key, f'[Missing: {key}]')
    ```
 4. Store language per user: `context.user_data['language'] = 'ptbr'`
-5. Support commands:
-   - `/lang en` — switch to English
-   - `/lang ptbr` — switch to PT-BR
-6. Update all handlers to use `get_message()` instead of hardcoded strings
+5. Update all handlers to use `get_message()` instead of hardcoded strings
 
 **Validation:**
 - Default language: English
-- Run `/lang ptbr` — all subsequent messages in Portuguese
-- Run `/lang en` — switch back to English
 - Complete flow in both languages — no hardcoded strings
 - Commands themselves remain universal (/start, /add_item, etc.)
 

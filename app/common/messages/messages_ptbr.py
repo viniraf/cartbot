@@ -104,7 +104,6 @@ MESSAGES = {
     "HELP_RESUME": "/continue - continuar compra ativa",
     "HELP_NEW": "/new - finalizar e começar uma nova compra",
     "HELP_FINISH": "/finish - finalizar compra atual",
-    "HELP_LANG": "/lang [en|ptbr] - mudar idioma",
     "HELP_ITEMS_TITLE": "Itens",
     "HELP_ADD_ITEM": "/add preço,item ou /add preço,qtd,item",
     "HELP_EDIT_ITEM": "/edit índice qty preço",
@@ -112,12 +111,6 @@ MESSAGES = {
     "HELP_OVERVIEW_TITLE": "Visão Geral",
     "HELP_VIEW_TOTAL": "/total - mostrar total",
     "HELP_LIST_ITEMS": "/list - mostrar todos os itens",
-
-    # /lang command
-    "LANG_SET_EN": "Language set to English.",
-    "LANG_SET_PTBR": "Idioma alterado para Português.",
-    "LANG_INVALID": "Idioma inválido. Use: /lang en ou /lang ptbr",
-    "LANG_USAGE": "Uso: /lang [en|ptbr]\n\nExemplo:\n/lang ptbr - mudar para Português\n/lang en - mudar para Inglês",
 
     # Store name input
     "STORE_PROMPT": "Qual o nome do estabelecimento?",
@@ -150,11 +143,6 @@ MESSAGES = {
     "ERROR_INVALID_EDIT_INPUT_TITLE": "❌ Formato /edit Inválido",
     "ERROR_INVALID_EDIT_INPUT_EXPLANATION": "Índice e quantidade devem ser números inteiros, preço deve ser um decimal.",
     "ERROR_INVALID_EDIT_INPUT_EXAMPLE": "Formato correto: /edit 1 2 3,50",
-
-    # Invalid language
-    "ERROR_INVALID_LANG_TITLE": "❌ Idioma Inválido",
-    "ERROR_INVALID_LANG_EXPLANATION": "Os idiomas suportados são Inglês (en) e Português (ptbr).",
-    "ERROR_INVALID_LANG_EXAMPLE": "Formato correto: /lang en ou /lang ptbr",
 
     # Invalid locale at /start
     "ERROR_INVALID_LOCALE_TITLE": "❌ Localidade Inválida",

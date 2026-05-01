@@ -21,7 +21,7 @@ from telegram.ext import ContextTypes
 
 from app.handlers.handlers import (
     start_handler, store_input_handler, add_item_handler, list_items_handler,
-    finish_handler, resume_handler, lang_handler, unknown_command_handler,
+    finish_handler, resume_handler, unknown_command_handler,
     format_error_message
 )
 from app.domain import NotFoundError, ValidationError
@@ -165,55 +165,6 @@ class TestFullEndToEndENUS:
         assert "--\n" in call_args
         assert "Type /help" in call_args
 
-
-class TestLanguageSwitchingMidSession:
-    """Test language switching mid-session."""
-
-    @pytest.mark.asyncio
-    async def test_switch_en_to_ptbr(self, create_context, create_update):
-        """Switch from EN to PT-BR mid-session via /lang ptbr"""
-        context = create_context("en")
-        
-        # Start in English
-        update = create_update("/start")
-        await start_handler(update, context)
-        
-        # Verify English
-        call_args = update.message.reply_text.call_args[0][0]
-        assert "store name" in call_args.lower()
-        
-        # Switch to PT-BR
-        update = create_update("/lang ptbr")
-        await lang_handler(update, context)
-        
-        # Verify language switched
-        assert context.user_data["language"] == "ptbr"
-        
-        # Next message should be PT-BR
-        update = create_update("Loja do João")
-        await store_input_handler(update, context)
-        
-        call_args = update.message.reply_text.call_args[0][0]
-        # Should be in Portuguese
-        assert "Loja do João" in call_args
-
-    @pytest.mark.asyncio
-    async def test_switch_ptbr_to_en(self, create_context, create_update):
-        """Switch from PT-BR to EN mid-session via /lang en"""
-        context = create_context("ptbr")
-        
-        # Switch to English
-        update = create_update("/lang en")
-        await lang_handler(update, context)
-        
-        assert context.user_data["language"] == "en"
-        
-        # Next interaction in English
-        update = create_update("/start")
-        await start_handler(update, context)
-        
-        call_args = update.message.reply_text.call_args[0][0]
-        assert "store name" in call_args.lower()
 
 
 class TestUnknownCommandHandling:

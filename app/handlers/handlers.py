@@ -727,64 +727,6 @@ async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 @safe_handler
-async def lang_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /lang command - switch language preference.
-
-    Allows user to switch between English and Portuguese (Brazil).
-    Language preference is stored per user in context.user_data.
-
-    Args:
-        update: Telegram update containing message and user info
-        context: Handler context with user_data for language storage
-
-    User flows:
-        User: /lang ptbr
-        Bot: "Idioma alterado para Portugu├¬s."
-
-        User: /lang en
-        Bot: "Language set to English."
-
-        User: /lang invalid
-        Bot: "Invalid language. Use: /lang en or /lang ptbr"
-    """
-    try:
-        user_id = update.effective_user.id
-        logger.info(f"[User {user_id}] /lang command received")
-
-        text = (update.message.text or "").strip()
-        args = text.split()[1:]
-
-        if len(args) < 1:
-            logger.warning(f"[User {user_id}] /lang missing args")
-            error_msg = format_error_message(context, "INVALID_LANG")
-            await update.message.reply_text(error_msg)
-            return
-
-        requested_language = args[0].lower()
-
-        # Try to set the language
-        if set_language(context, requested_language):
-            logger.info(f"[User {user_id}] Language changed to {requested_language}")
-
-            # Show confirmation based on language set
-            if requested_language == "en":
-                msg = format_message(context, "LANG_SET_EN")
-            else:
-                msg = format_message(context, "LANG_SET_PTBR")
-
-            await update.message.reply_text(append_help_hint(msg, context))
-        else:
-            logger.warning(f"[User {user_id}] Invalid language: {requested_language}")
-            error_msg = format_error_message(context, "INVALID_LANG")
-            await update.message.reply_text(error_msg)
-
-    except Exception as e:
-        logger.exception(f"[User {update.effective_user.id}] /lang error: {e}")
-        error_msg = format_error_message(context, "GENERIC")
-        await update.message.reply_text(error_msg)
-
-
-@safe_handler
 async def store_input_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle free-text input for store name when waiting_for_store_input flag is set.
 
