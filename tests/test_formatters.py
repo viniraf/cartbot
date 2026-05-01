@@ -17,13 +17,13 @@ def test_format_currency_bad_input():
     assert format_currency("abc") == "R$ 0.00"
 
 
-def test_format_currency_english_context_uses_usd():
+def test_format_currency_english_context_uses_dollar_symbol():
     from unittest.mock import MagicMock
     context = MagicMock()
     context.user_data = {"language": "en"}
 
-    assert format_currency(5, context) == "U$ 5.00"
-    assert format_currency(11.567, context) == "U$ 11.57"
+    assert format_currency(5, context) == "$ 5.00"
+    assert format_currency(11.567, context) == "$ 11.57"
 
 
 def test_format_currency_ptbr_context_uses_brl():

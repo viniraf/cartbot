@@ -79,7 +79,7 @@ class TestViewTotalHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Total" in message_text
-        assert "U$" in message_text
+        assert "$" in message_text
         assert "3.00" in message_text
         assert "Items" in message_text
         assert "2" in message_text  # qty=2 for milk
@@ -93,7 +93,7 @@ class TestViewTotalHandler:
         await view_total_handler(mock_update, mock_context)
 
         message_text = mock_update.message.reply_text.call_args[0][0]
-        assert "U$" in message_text
+        assert "$" in message_text
         assert "0.00" in message_text
         assert "Items" in message_text
 
@@ -128,9 +128,9 @@ class TestListItemsHandler:
         assert "milk" in message_text.lower()
         assert "2." in message_text
         assert "bread" in message_text.lower()
-        assert "U$" in message_text  # milk subtotal
+        assert "$" in message_text  # milk subtotal
         assert "3.00" in message_text
-        assert "U$" in message_text  # bread subtotal
+        assert "$" in message_text  # bread subtotal
         assert "2.00" in message_text
 
     @pytest.mark.asyncio
@@ -171,7 +171,7 @@ class TestDeleteItemHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Item deleted" in message_text
-        assert "U$" in message_text  # Only milk left
+        assert "$" in message_text  # Only milk left
         assert "3.00" in message_text
 
     @pytest.mark.asyncio
@@ -186,7 +186,7 @@ class TestDeleteItemHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Item deleted" in message_text
-        assert "U$" in message_text
+        assert "$" in message_text
         assert "0.00" in message_text
 
     @pytest.mark.asyncio
@@ -225,7 +225,7 @@ class TestEditItemHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "Item updated" in message_text
-        assert "U$" in message_text  # 3 * 2.00
+        assert "$" in message_text  # 3 * 2.00
         assert "6.00" in message_text
 
     @pytest.mark.asyncio
@@ -243,9 +243,9 @@ class TestEditItemHandler:
 
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "5" in message_text
-        assert "U$" in message_text
+        assert "$" in message_text
         assert "2.00" in message_text
-        assert "U$" in message_text
+        assert "$" in message_text
         assert "10.00" in message_text
 
     @pytest.mark.asyncio
@@ -286,7 +286,7 @@ class TestFinishHandler:
         assert "completed" in message_text.lower() or "finalizada" in message_text.lower()
         assert "TestStore" in message_text  # Store name should be included
         assert "items" in message_text.lower()  # "Total items" should be present
-        assert "U$" in message_text
+        assert "$" in message_text
         assert "3.00" in message_text
         assert "2" in message_text  # qty=2 for milk
         assert "/start" in message_text
@@ -321,7 +321,7 @@ class TestFinishHandler:
         message_text = mock_update.message.reply_text.call_args[0][0]
         assert "completed" in message_text.lower() or "finalizada" in message_text.lower()
         assert "TestStore" in message_text  # Store name should be included
-        assert "U$" in message_text
+        assert "$" in message_text
         assert "0.00" in message_text
         assert "items" in message_text.lower()  # "Total items" should be present
         assert "0" in message_text

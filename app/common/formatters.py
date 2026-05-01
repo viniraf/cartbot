@@ -18,7 +18,7 @@ def format_currency(value: float, context: Any = None, *, language: str | None =
 
     If a context is provided, the currency symbol is selected based on the
     user's language preference:
-      - English = U$
+      - English = $
       - Portuguese = R$
 
     If no context or language is provided, the helper defaults to Brazilian
@@ -29,7 +29,7 @@ def format_currency(value: float, context: Any = None, *, language: str | None =
         context: Optional handler context used to infer language.
         language: Optional explicit language code.
     Returns:
-        A string like "R$ 3.50" or "U$ 3.50".
+        A string like "R$ 3.50" or "$ 3.50".
     """
     try:
         amount = float(value)
@@ -43,7 +43,7 @@ def format_currency(value: float, context: Any = None, *, language: str | None =
         except Exception:
             language = None
 
-    symbol = "U$" if language == "en" else "R$"
+    symbol = "$" if language == "en" else "R$"
     return f"{symbol} {amount:,.2f}"  # comma for thousands if ever needed
 
 
