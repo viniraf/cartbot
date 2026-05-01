@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, AsyncMock
 from telegram import Update, User, Chat, Message
 from telegram.ext import ContextTypes
 
-from app.handlers.handlers import resume_handler, new_handler
+from app.handlers.handlers import resume_handler, new_handler, store_input_handler
 from app.services import PurchaseService
 from app.infra.repositories import SQLitePurchaseRepository
 from app.infra import init_db
@@ -161,7 +161,7 @@ class TestResumeHandlerErrors:
         # Verify error message and context cleared
         mock_update.message.reply_text.assert_called_once()
         call_args = mock_update.message.reply_text.call_args[0][0]
-        assert "not found" in call_args.lower() or "error" in call_args.lower()
+        assert "no active purchase" in call_args.lower()
 
         # Verify purchase_id was cleared from context
         assert context.user_data.get("purchase_id") is None
@@ -194,7 +194,7 @@ class TestNewHandlerSuccess:
 
     @pytest.mark.asyncio
     async def test_new_with_active_purchase(self, mock_update, mock_context_with_purchase):
-        """new_handler should finish current purchase and start a new one."""
+        """new_handler should finish current purchase and prepare for new one."""
         context, old_purchase_id = mock_context_with_purchase
         service = context.bot_data["service"]
 
@@ -213,15 +213,9 @@ class TestNewHandlerSuccess:
         assert old_purchase["finished_at"] is not None
         assert old_purchase["total"] == 19.00
 
-        # Verify new purchase was created
-        new_purchase_id = context.user_data.get("purchase_id")
-        assert new_purchase_id is not None
-        assert new_purchase_id != old_purchase_id
-
-        # Verify new purchase is active and empty
-        new_purchase = service.get_purchase(new_purchase_id)
-        assert new_purchase["finished_at"] is None
-        assert new_purchase["item_count"] == 0
+        # Verify waiting for store input (new purchase flow started)
+        assert context.user_data.get("waiting_for_store_input") is True
+        assert context.user_data.get("purchase_id") is None
 
     @pytest.mark.asyncio
     async def test_new_without_active_purchase(self, mock_update, mock_context_empty):
@@ -251,14 +245,9 @@ class TestNewHandlerEdgeCases:
         # Call /new - should start fresh without error
         await new_handler(mock_update, context)
 
-        # Verify a new purchase was created
-        new_purchase_id = context.user_data.get("purchase_id")
-        assert new_purchase_id is not None
-        assert new_purchase_id != old_purchase_id
-
-        # Verify new purchase is active
-        new_purchase = service.get_purchase(new_purchase_id)
-        assert new_purchase["finished_at"] is None
+        # Verify waiting for store input (new purchase flow started)
+        assert context.user_data.get("waiting_for_store_input") is True
+        assert context.user_data.get("purchase_id") is None
 
 
 # Integration tests for state transitions
@@ -284,7 +273,7 @@ class TestResumeNewIntegration:
         mock_update.message.reply_text.assert_called_once()
         call_args = mock_update.message.reply_text.call_args[0][0]
         assert "active purchase" in call_args.lower()
-        assert "/resume" in call_args
+        assert "/continue" in call_args
         assert "/new" in call_args
 
         # Verify purchase_id was NOT changed
@@ -301,13 +290,19 @@ class TestResumeNewIntegration:
         # Clear previous calls
         mock_update.message.reply_text.reset_mock()
 
-        # Step 1: /start - should create fresh purchase
+        # Step 1: /start - should prompt for store name
         await start_handler(mock_update, context)
+        assert context.user_data.get("waiting_for_store_input") is True
+
+        # Provide store name to create purchase
+        mock_update.message.text = "TestStore"
+        await store_input_handler(mock_update, context)
         purchase_1 = context.user_data["purchase_id"]
         assert purchase_1 is not None
 
         # Step 2: /start again - should show resume prompt since purchase is active
         mock_update.message.reply_text.reset_mock()
+        mock_update.message.text = "/start"  # Reset message text
         await start_handler(mock_update, context)
         call_args = mock_update.message.reply_text.call_args[0][0]
         assert "active purchase" in call_args.lower()
@@ -315,6 +310,12 @@ class TestResumeNewIntegration:
         # Step 3: /new - finish purchase and start fresh
         mock_update.message.reply_text.reset_mock()
         await new_handler(mock_update, context)
+        assert context.user_data.get("waiting_for_store_input") is True
+        assert context.user_data.get("purchase_id") is None
+
+        # Provide store name to create new purchase
+        mock_update.message.text = "NewStore"
+        await store_input_handler(mock_update, context)
         purchase_2 = context.user_data["purchase_id"]
         assert purchase_2 is not None
         assert purchase_2 != purchase_1

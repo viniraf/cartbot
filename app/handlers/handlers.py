@@ -328,7 +328,7 @@ async def view_total_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         total = purchase["total"]
         count = purchase["item_count"]
 
-        text = "Total: " + format_currency(total) + "\n\nItems: " + str(count)
+        text = format_message(context, "VIEW_TOTAL_PREFIX", total=format_currency(total)) + "\n\n" + format_message(context, "VIEW_TOTAL_ITEMS", item_count=count)
         await update.message.reply_text(append_help_hint(text, context))
 
     except NotFoundError as e:
@@ -355,10 +355,12 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         items = purchase.get("items", [])
         if not items:
-            await update.message.reply_text(append_help_hint("No items yet. Use /add to add items.", context))
+            empty_msg = format_message(context, "LIST_ITEMS_EMPTY")
+            help_msg = format_message(context, "LIST_ITEMS_EMPTY_HELP")
+            await update.message.reply_text(append_help_hint(f"{empty_msg}\n\n{help_msg}", context))
             return
 
-        item_lines = ["Items", ""]
+        item_lines = [format_message(context, "LIST_ITEMS_TITLE"), ""]
         for i, item in enumerate(items, start=1):
             name = item["name"]
             qty = item["quantity"]
@@ -370,11 +372,11 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         total = sum(item["quantity"] * item["unit_price"] for item in items)
         item_lines.append("")
-        item_lines.append(f"Total: {format_currency(total)}")
+        item_lines.append(format_message(context, "LIST_ITEMS_TOTAL", total=format_currency(total)))
         item_lines.append("")
-        item_lines.append("Actions:")
-        item_lines.append("/delete N — remove item")
-        item_lines.append("/edit N qty price — modify item")
+        item_lines.append(format_message(context, "LIST_ITEMS_ACTIONS"))
+        item_lines.append(format_message(context, "LIST_ITEMS_DELETE_ITEM"))
+        item_lines.append(format_message(context, "LIST_ITEMS_EDIT_ITEM"))
         
         await update.message.reply_text(append_help_hint(format_command_block(item_lines), context))
 
@@ -427,7 +429,11 @@ async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         logger.info(f"[User {user_id}] Item {user_index} deleted from purchase {purchase_id}")
 
-        await update.message.reply_text(append_help_hint(f"Item deleted.\n\nNew total: {format_currency(total)}", context))
+        await update.message.reply_text(append_help_hint(
+            format_message(context, "DELETE_ITEM_SUCCESS") + "\n\n" + 
+            format_message(context, "DELETE_ITEM_NEW_TOTAL", total=format_currency(total)), 
+            context
+        ))
 
     except NotFoundError as e:
         logger.warning("[User %s] /delete NotFoundError: %s", update.effective_user.id, e)
@@ -479,7 +485,11 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         logger.info(f"[User {user_id}] Item {user_index} edited in purchase {purchase_id}")
 
-        await update.message.reply_text(append_help_hint(f"Item updated.\n\nNew total: {format_currency(total)}", context))
+        await update.message.reply_text(append_help_hint(
+            format_message(context, "EDIT_ITEM_SUCCESS") + "\n\n" + 
+            format_message(context, "EDIT_ITEM_NEW_TOTAL", total=format_currency(total)), 
+            context
+        ))
 
     except NotFoundError as e:
         logger.warning("[User %s] /edit NotFoundError: %s", update.effective_user.id, e)
@@ -662,10 +672,10 @@ async def new_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
             # Show summary of finished purchase
             summary_lines = [
-                "Previous purchase finished.",
+                format_message(context, "NEW_PREVIOUS_FINISHED"),
                 "",
-                f"Total: {format_currency(total)}",
-                f"Items: {count}",
+                format_message(context, "NEW_TOTAL", total=format_currency(total)),
+                format_message(context, "NEW_ITEMS", item_count=count),
             ]
             await update.message.reply_text(format_command_block(summary_lines))
 
