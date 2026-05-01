@@ -817,10 +817,10 @@ Build CartBot (a Telegram shopping list bot) incrementally following the Modular
 
 **Instructions:**
 1. Create `app/common/formatters.py` with helpers:
-   - `format_currency(value: float) -> str`: Format money as R$ with 2 decimals
-     - 5 → `R$ 5.00`
-     - 5.5 → `R$ 5.50`
-     - 11.567 → `R$ 11.57`
+   - `format_currency(value: float) -> str`: Format money with a language-specific currency symbol
+     - English: `U$ 5.00`
+     - Portuguese: `R$ 5.00`
+     - 11.567 → `U$ 11.57` or `R$ 11.57` depending on language
    - `append_help_hint(text: str) -> str`: Add footer with help link
      - Always appends: `—\nNeed help? Use /help`
    - `format_command_block(commands: list[str]) -> str`: Format command lists
@@ -1174,7 +1174,7 @@ Need help? Use /help
    }
    ```
 2. Create same structure in `messages_ptbr.py` with PT-BR translations
-   - Always keep currency as `R$` (not translated)
+   - Localize currency symbol by language: English users see `U$`, Portuguese users see `R$`
    - Keep command names as /start, /add_item, etc. (universal)
 3. Create language manager:
    ```python
@@ -1203,7 +1203,8 @@ Need help? Use /help
 
 **Common mistakes to avoid:**
 - ❌ Translating command names (/start must stay /start)
-- ❌ Translating currency (R$ always, even in EN)
+- ❌ Translating command names (/start, /add_item, etc.)
+- ❌ Ignoring language-based currency symbol selection
 - ❌ Leaving some messages hardcoded in handlers
 - ❌ Incomplete translations (missing keys)
 - ❌ Not persisting language choice

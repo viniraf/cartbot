@@ -46,13 +46,10 @@ class TestMessageRetrieval:
         msg = get_message("en", "ADD_ITEM_TOTAL", total="R$ 25.00")
         assert "R$ 25.00" in msg or "25.00" in msg
 
-    def test_get_message_currency_not_translated(self):
-        """Currency (R$) should never be translated."""
-        msg_en = get_message("en", "ADD_ITEM_TOTAL", total="R$ 25.00")
-        msg_pt = get_message("ptbr", "ADD_ITEM_TOTAL", total="R$ 25.00")
-        # Both should contain R$ (not translated)
-        assert "R$" in msg_en
-        assert "R$" in msg_pt
+    def test_get_message_preserves_passed_currency_string(self):
+        """get_message should preserve whatever currency string is passed in."""
+        msg_en = get_message("en", "ADD_ITEM_TOTAL", total="U$ 25.00")
+        assert "U$ 25.00" in msg_en
 
     def test_command_names_not_translated(self):
         """Command names should not be translated."""

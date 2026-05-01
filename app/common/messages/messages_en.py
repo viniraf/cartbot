@@ -5,7 +5,7 @@ All user-facing messages are centralized here for:
 2. Easy translation to other languages
 3. Easier maintenance and updates
 
-Currency (R$) is NOT translated - always displayed as R$ in all languages.
+Currency symbol is localized by language: English users see U$, Portuguese users see R$.
 Command names (/start, /add_item, etc.) are also NOT translated.
 """
 

@@ -13,21 +13,38 @@ Functions:
 from typing import List, Any
 
 
-def format_currency(value: float) -> str:
-    """Format a numeric value as Brazilian Real currency.
+def format_currency(value: float, context: Any = None, *, language: str | None = None) -> str:
+    """Format a numeric value as currency.
 
-    Always uses the R$ symbol and shows exactly two decimal places.
+    If a context is provided, the currency symbol is selected based on the
+    user's language preference:
+      - English = U$
+      - Portuguese = R$
+
+    If no context or language is provided, the helper defaults to Brazilian
+    Real for backward compatibility.
 
     Args:
         value: Numeric amount (int or float).
+        context: Optional handler context used to infer language.
+        language: Optional explicit language code.
     Returns:
-        A string like "R$ 3.50".
+        A string like "R$ 3.50" or "U$ 3.50".
     """
     try:
         amount = float(value)
     except (TypeError, ValueError):
         amount = 0.0
-    return f"R$ {amount:,.2f}"  # comma for thousands if ever needed
+
+    if language is None and context is not None:
+        try:
+            from app.common.messages import get_language
+            language = get_language(context)
+        except Exception:
+            language = None
+
+    symbol = "U$" if language == "en" else "R$"
+    return f"{symbol} {amount:,.2f}"  # comma for thousands if ever needed
 
 
 def format_command_block(lines: List[str]) -> str:

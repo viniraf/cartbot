@@ -184,7 +184,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                     "",
                     format_message(context, "START_ACTIVE_CREATED", created_at=created_at[:10]),
                     format_message(context, "START_ACTIVE_ITEMS", item_count=item_count),
-                    format_message(context, "START_ACTIVE_TOTAL", total=format_currency(total)),
+                    format_message(context, "START_ACTIVE_TOTAL", total=format_currency(total, context)),
                     "",
                     format_message(context, "START_ACTIVE_OPTIONS"),
                     format_message(context, "START_ACTIVE_RESUME"),
@@ -288,7 +288,7 @@ async def add_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         
         items_added_msg = format_message(context, "ADD_ITEMS_COUNT", count=total_physical_units)
         total_items_msg = format_message(context, "ADD_TOTAL_ITEMS", item_count=final_item_count)
-        total_amount_msg = format_message(context, "ADD_TOTAL_AMOUNT", total=format_currency(final_total))
+        total_amount_msg = format_message(context, "ADD_TOTAL_AMOUNT", total=format_currency(final_total, context))
         
         response_lines = [
             items_added_msg,
@@ -328,7 +328,7 @@ async def view_total_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         total = purchase["total"]
         count = purchase["item_count"]
 
-        text = format_message(context, "VIEW_TOTAL_PREFIX", total=format_currency(total)) + "\n\n" + format_message(context, "VIEW_TOTAL_ITEMS", item_count=count)
+        text = format_message(context, "VIEW_TOTAL_PREFIX", total=format_currency(total, context)) + "\n\n" + format_message(context, "VIEW_TOTAL_ITEMS", item_count=count)
         await update.message.reply_text(append_help_hint(text, context))
 
     except NotFoundError as e:
@@ -367,12 +367,12 @@ async def list_items_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
             price = item["unit_price"]
             subtotal = qty * price
             item_lines.append(
-                f"{i}. {name} × {qty} @ {format_currency(price)} = {format_currency(subtotal)}"
+                f"{i}. {name} × {qty} @ {format_currency(price, context)} = {format_currency(subtotal, context)}"
             )
 
         total = sum(item["quantity"] * item["unit_price"] for item in items)
         item_lines.append("")
-        item_lines.append(format_message(context, "LIST_ITEMS_TOTAL", total=format_currency(total)))
+        item_lines.append(format_message(context, "LIST_ITEMS_TOTAL", total=format_currency(total, context)))
         item_lines.append("")
         item_lines.append(format_message(context, "LIST_ITEMS_ACTIONS"))
         item_lines.append(format_message(context, "LIST_ITEMS_DELETE_ITEM"))
@@ -431,7 +431,7 @@ async def delete_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         await update.message.reply_text(append_help_hint(
             format_message(context, "DELETE_ITEM_SUCCESS") + "\n\n" + 
-            format_message(context, "DELETE_ITEM_NEW_TOTAL", total=format_currency(total)), 
+            format_message(context, "DELETE_ITEM_NEW_TOTAL", total=format_currency(total, context)), 
             context
         ))
 
@@ -487,7 +487,7 @@ async def edit_item_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         await update.message.reply_text(append_help_hint(
             format_message(context, "EDIT_ITEM_SUCCESS") + "\n\n" + 
-            format_message(context, "EDIT_ITEM_NEW_TOTAL", total=format_currency(total)), 
+            format_message(context, "EDIT_ITEM_NEW_TOTAL", total=format_currency(total, context)), 
             context
         ))
 
@@ -527,7 +527,7 @@ async def finish_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         title = format_message(context, "FINISH_TITLE")
         store = format_message(context, "FINISH_STORE", store_name=store_name)
         total_items = format_message(context, "FINISH_TOTAL_ITEMS", item_count=count)
-        total_amount = format_message(context, "FINISH_TOTAL_AMOUNT", total=format_currency(total))
+        total_amount = format_message(context, "FINISH_TOTAL_AMOUNT", total=format_currency(total, context))
         next_action = format_message(context, "FINISH_NEW_PURCHASE")
 
         summary_lines = [
@@ -614,7 +614,7 @@ async def resume_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "",
             format_message(context, "RESUME_CREATED", created_at=created_at[:10]),
             format_message(context, "RESUME_ITEMS", item_count=item_count),
-            format_message(context, "RESUME_TOTAL", total=format_currency(total)),
+            format_message(context, "RESUME_TOTAL", total=format_currency(total, context)),
             "",
             format_message(context, "RESUME_ACTIONS"),
             format_message(context, "RESUME_ADD_ITEM"),
@@ -674,7 +674,7 @@ async def new_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             summary_lines = [
                 format_message(context, "NEW_PREVIOUS_FINISHED"),
                 "",
-                format_message(context, "NEW_TOTAL", total=format_currency(total)),
+                format_message(context, "NEW_TOTAL", total=format_currency(total, context)),
                 format_message(context, "NEW_ITEMS", item_count=count),
             ]
             await update.message.reply_text(format_command_block(summary_lines))
