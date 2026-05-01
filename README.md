@@ -12,6 +12,19 @@ CartBot simplifies everyday shopping. Record items while you shop at the market,
 
 ---
 
+## 🤖 Create Your Telegram Bot (BotFather)
+
+Before running CartBot, create a Telegram bot and copy its token:
+
+1. Open Telegram and search for `@BotFather`
+2. Send `/newbot` and follow the naming steps
+3. Copy the generated token and use it as `TELEGRAM_TOKEN`
+
+For the official and complete guide, see:
+[Creating a new bot (Telegram Docs)](https://core.telegram.org/bots/features#creating-a-new-bot)
+
+---
+
 ## 💬 Commands
 
 | Command | Description |
@@ -230,8 +243,6 @@ CartBot supports two languages:
 
 All messages will be in your chosen language.
 
-**Change language:** Call `/start en` or `/start ptbr` to switch languages.
-
 ---
 
 ## 🛠 Developer Information
@@ -273,13 +284,3 @@ pytest
 ```
 
 All tests are located in the `tests/` directory.
-
----
-
-## 📌 Status
-
-**Current Version:** V3  
-**Status:** Active Development  
-**Last Updated:** 2026-04  
-
-For issues, feature requests, or contributions, please refer to the documentation in the `docs/` folder.
