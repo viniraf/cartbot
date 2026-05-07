@@ -29,7 +29,7 @@ Para o guia oficial e completo, veja:
 
 | Comando | Descrição |
 |---------|-----------|
-| `/start` | Inicie uma nova compra (Português) |
+| `/start` | Inicie uma nova compra (Inglês) |
 | `/start en` | Inicie uma nova compra (Inglês) |
 | `/start ptbr` | Inicie uma nova compra (Português) |
 | `/continue` | Retome uma compra ativa |
