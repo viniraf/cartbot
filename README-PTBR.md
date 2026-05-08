@@ -260,8 +260,8 @@ Todas as mensagens estarão no idioma escolhido.
 1. Crie um ambiente virtual:
    ```
    python -m venv .venv
-   source .venv/bin/activate  # Linux/Mac
-   .venv\Scripts\activate     # Windows
+   venv\Scripts\activate.bat     # Windows
+   source venv/bin/activate  # Linux/Mac
    ```
 
 2. Instale as dependências:
@@ -276,7 +276,7 @@ Todas as mensagens estarão no idioma escolhido.
 
 4. Execute o bot:
    ```
-   python app/main.py
+   python -m app.main
    ```
 
 ### Testes
