@@ -5,6 +5,7 @@ It follows the modular monolith pattern, keeping handlers thin and delegating
 to the service layer for business logic.
 """
 
+import asyncio
 import logging
 from telegram.ext import Application, ContextTypes
 
@@ -147,6 +148,13 @@ def run_bot(app: Application) -> None:
         - Proxy configuration if behind firewall
     """
     logger.info("Starting bot polling...")
+
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
     try:
         app.run_polling(drop_pending_updates=True)
     except KeyboardInterrupt:
